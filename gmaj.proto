@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package pb;
+
+service Node {
+        rpc GetPredecessor(Nil) returns (RemoteNode) {}
+        rpc GetSuccessor(Nil) returns (RemoteNode) {}
+        rpc SetPredecessor(RemoteNode) returns (Response) {}
+        rpc SetSuccessor(RemoteNode) returns (Response) {}
+        rpc Notify(RemoteNode) returns (Response) {}
+        rpc ClosestPrecedingFinger(ID) returns (RemoteNode) {}
+        rpc FindSuccessor(ID) returns (RemoteNode) {}
+        rpc Get(Key) returns (Val) {}
+        rpc Put(KeyVal) returns (Response) {}
+        rpc TransferKeys(TransferMsg) returns (Response) {}
+}
+
+message RemoteNode {
+        bytes id = 1;
+        string addr = 2;
+}
+
+message TransferMsg {
+        bytes fromID = 1;
+        RemoteNode toNode = 2;
+}
+
+message Nil {}
+
+message KeyVal {
+        string key = 1;
+        string val = 2;
+}
+
+message ID {
+        bytes id = 1;
+}
+
+message Key {
+        string key = 1;
+}
+
+message Val {
+        string val = 1;
+}
+
+message Response {
+        bool success = 1;
+}
