@@ -22,3 +22,11 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+
+# Unmodified course code
+chord_test.go
+finger_test.go
+kv_store_test.go
+node_rpc_impl_test.go
+util_test.go

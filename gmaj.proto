@@ -1,49 +1,68 @@
+// compile with:
+//
+//   protoc *.proto --go_out=plugins=grpc:.
+
 syntax = "proto3";
 
-package pb;
+package gmaj;
 
+// Node is the service for inter-node communication.
+// This has all the RPC functions needed to maintain
+// a Chord cluster.
 service Node {
-        rpc GetPredecessor(Nil) returns (RemoteNode) {}
-        rpc GetSuccessor(Nil) returns (RemoteNode) {}
-        rpc SetPredecessor(RemoteNode) returns (Response) {}
-        rpc SetSuccessor(RemoteNode) returns (Response) {}
-        rpc Notify(RemoteNode) returns (Response) {}
-        rpc ClosestPrecedingFinger(ID) returns (RemoteNode) {}
-        rpc FindSuccessor(ID) returns (RemoteNode) {}
-        rpc Get(Key) returns (Val) {}
-        rpc Put(KeyVal) returns (Response) {}
-        rpc TransferKeys(TransferMsg) returns (Response) {}
+    rpc GetPredecessor(MT) returns (RemoteNode);
+    rpc GetSuccessor(MT) returns (RemoteNode);
+    rpc SetPredecessor(RemoteNode) returns (MT);
+    rpc SetSuccessor(RemoteNode) returns (MT);
+    rpc Notify(RemoteNode) returns (MT);
+    rpc ClosestPrecedingFinger(ID) returns (RemoteNode);
+    rpc FindSuccessor(ID) returns (RemoteNode);
+    rpc Get(Key) returns (Val);
+    rpc Put(KeyVal) returns (MT);
+    rpc TransferKeys(TransferMsg) returns (MT);
+}
+
+// NodeAPI is for wwriting client applications that are
+// completely agnostic of the Chord spec, but are aware
+service NodeAPI {
+    rpc Get(Key) returns (Val);
+    rpc Put(KeyVal) returns (MT);
+}
+
+// MembershipServer maintains a list of nodes in the Chord cluster
+// for client applications to be made aware of nodes on which to call
+// Get and Put.
+service MembershipServer {
+    rpc AddNode(RemoteNode) returns (MT);
+    rpc DelNode(RemoteNode) returns (MT);
+    rpc GetNode(MT) returns (RemoteNode);
 }
 
 message RemoteNode {
-        bytes id = 1;
-        string addr = 2;
+    bytes id = 1;
+    string addr = 2;
 }
 
 message TransferMsg {
-        bytes fromID = 1;
-        RemoteNode toNode = 2;
+    bytes fromID = 1;
+    RemoteNode toNode = 2;
 }
 
-message Nil {}
+message MT {}
 
 message KeyVal {
-        string key = 1;
-        string val = 2;
+    string key = 1;
+    string val = 2;
 }
 
 message ID {
-        bytes id = 1;
+    bytes id = 1;
 }
 
 message Key {
-        string key = 1;
+    string key = 1;
 }
 
 message Val {
-        string val = 1;
-}
-
-message Response {
-        bool success = 1;
+    string val = 1;
 }

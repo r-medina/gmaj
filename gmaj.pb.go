@@ -3,7 +3,7 @@
 // DO NOT EDIT!
 
 /*
-Package pb is a generated protocol buffer package.
+Package gmaj is a generated protocol buffer package.
 
 It is generated from these files:
 	gmaj.proto
@@ -11,14 +11,13 @@ It is generated from these files:
 It has these top-level messages:
 	RemoteNode
 	TransferMsg
-	Nil
+	MT
 	KeyVal
 	ID
 	Key
 	Val
-	Response
 */
-package pb
+package gmaj
 
 import proto "github.com/golang/protobuf/proto"
 
@@ -59,12 +58,12 @@ func (m *TransferMsg) GetToNode() *RemoteNode {
 	return nil
 }
 
-type Nil struct {
+type MT struct {
 }
 
-func (m *Nil) Reset()         { *m = Nil{} }
-func (m *Nil) String() string { return proto.CompactTextString(m) }
-func (*Nil) ProtoMessage()    {}
+func (m *MT) Reset()         { *m = MT{} }
+func (m *MT) String() string { return proto.CompactTextString(m) }
+func (*MT) ProtoMessage()    {}
 
 type KeyVal struct {
 	Key string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
@@ -99,30 +98,22 @@ func (m *Val) Reset()         { *m = Val{} }
 func (m *Val) String() string { return proto.CompactTextString(m) }
 func (*Val) ProtoMessage()    {}
 
-type Response struct {
-	Success bool `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
-}
-
-func (m *Response) Reset()         { *m = Response{} }
-func (m *Response) String() string { return proto.CompactTextString(m) }
-func (*Response) ProtoMessage()    {}
-
 func init() {
 }
 
 // Client API for Node service
 
 type NodeClient interface {
-	GetPredecessor(ctx context.Context, in *Nil, opts ...grpc.CallOption) (*RemoteNode, error)
-	GetSuccessor(ctx context.Context, in *Nil, opts ...grpc.CallOption) (*RemoteNode, error)
-	SetPredecessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*Response, error)
-	SetSuccessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*Response, error)
-	Notify(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*Response, error)
+	GetPredecessor(ctx context.Context, in *MT, opts ...grpc.CallOption) (*RemoteNode, error)
+	GetSuccessor(ctx context.Context, in *MT, opts ...grpc.CallOption) (*RemoteNode, error)
+	SetPredecessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error)
+	SetSuccessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error)
+	Notify(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error)
 	ClosestPrecedingFinger(ctx context.Context, in *ID, opts ...grpc.CallOption) (*RemoteNode, error)
 	FindSuccessor(ctx context.Context, in *ID, opts ...grpc.CallOption) (*RemoteNode, error)
 	Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Val, error)
-	Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*Response, error)
-	TransferKeys(ctx context.Context, in *TransferMsg, opts ...grpc.CallOption) (*Response, error)
+	Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*MT, error)
+	TransferKeys(ctx context.Context, in *TransferMsg, opts ...grpc.CallOption) (*MT, error)
 }
 
 type nodeClient struct {
@@ -133,45 +124,45 @@ func NewNodeClient(cc *grpc.ClientConn) NodeClient {
 	return &nodeClient{cc}
 }
 
-func (c *nodeClient) GetPredecessor(ctx context.Context, in *Nil, opts ...grpc.CallOption) (*RemoteNode, error) {
+func (c *nodeClient) GetPredecessor(ctx context.Context, in *MT, opts ...grpc.CallOption) (*RemoteNode, error) {
 	out := new(RemoteNode)
-	err := grpc.Invoke(ctx, "/pb.Node/GetPredecessor", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/gmaj.Node/GetPredecessor", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) GetSuccessor(ctx context.Context, in *Nil, opts ...grpc.CallOption) (*RemoteNode, error) {
+func (c *nodeClient) GetSuccessor(ctx context.Context, in *MT, opts ...grpc.CallOption) (*RemoteNode, error) {
 	out := new(RemoteNode)
-	err := grpc.Invoke(ctx, "/pb.Node/GetSuccessor", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/gmaj.Node/GetSuccessor", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) SetPredecessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
-	err := grpc.Invoke(ctx, "/pb.Node/SetPredecessor", in, out, c.cc, opts...)
+func (c *nodeClient) SetPredecessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.Node/SetPredecessor", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) SetSuccessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
-	err := grpc.Invoke(ctx, "/pb.Node/SetSuccessor", in, out, c.cc, opts...)
+func (c *nodeClient) SetSuccessor(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.Node/SetSuccessor", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) Notify(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
-	err := grpc.Invoke(ctx, "/pb.Node/Notify", in, out, c.cc, opts...)
+func (c *nodeClient) Notify(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.Node/Notify", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +171,7 @@ func (c *nodeClient) Notify(ctx context.Context, in *RemoteNode, opts ...grpc.Ca
 
 func (c *nodeClient) ClosestPrecedingFinger(ctx context.Context, in *ID, opts ...grpc.CallOption) (*RemoteNode, error) {
 	out := new(RemoteNode)
-	err := grpc.Invoke(ctx, "/pb.Node/ClosestPrecedingFinger", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/gmaj.Node/ClosestPrecedingFinger", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -189,35 +180,34 @@ func (c *nodeClient) ClosestPrecedingFinger(ctx context.Context, in *ID, opts ..
 
 func (c *nodeClient) FindSuccessor(ctx context.Context, in *ID, opts ...grpc.CallOption) (*RemoteNode, error) {
 	out := new(RemoteNode)
-	err := grpc.Invoke(ctx, "/pb.Node/FindSuccessor", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/gmaj.Node/FindSuccessor", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
 
 func (c *nodeClient) Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Val, error) {
 	out := new(Val)
-	err := grpc.Invoke(ctx, "/pb.Node/Get", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/gmaj.Node/Get", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
-	err := grpc.Invoke(ctx, "/pb.Node/Put", in, out, c.cc, opts...)
+func (c *nodeClient) Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.Node/Put", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeClient) TransferKeys(ctx context.Context, in *TransferMsg, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
-	err := grpc.Invoke(ctx, "/pb.Node/TransferKeys", in, out, c.cc, opts...)
+func (c *nodeClient) TransferKeys(ctx context.Context, in *TransferMsg, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.Node/TransferKeys", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -227,16 +217,16 @@ func (c *nodeClient) TransferKeys(ctx context.Context, in *TransferMsg, opts ...
 // Server API for Node service
 
 type NodeServer interface {
-	GetPredecessor(context.Context, *Nil) (*RemoteNode, error)
-	GetSuccessor(context.Context, *Nil) (*RemoteNode, error)
-	SetPredecessor(context.Context, *RemoteNode) (*Response, error)
-	SetSuccessor(context.Context, *RemoteNode) (*Response, error)
-	Notify(context.Context, *RemoteNode) (*Response, error)
+	GetPredecessor(context.Context, *MT) (*RemoteNode, error)
+	GetSuccessor(context.Context, *MT) (*RemoteNode, error)
+	SetPredecessor(context.Context, *RemoteNode) (*MT, error)
+	SetSuccessor(context.Context, *RemoteNode) (*MT, error)
+	Notify(context.Context, *RemoteNode) (*MT, error)
 	ClosestPrecedingFinger(context.Context, *ID) (*RemoteNode, error)
 	FindSuccessor(context.Context, *ID) (*RemoteNode, error)
 	Get(context.Context, *Key) (*Val, error)
-	Put(context.Context, *KeyVal) (*Response, error)
-	TransferKeys(context.Context, *TransferMsg) (*Response, error)
+	Put(context.Context, *KeyVal) (*MT, error)
+	TransferKeys(context.Context, *TransferMsg) (*MT, error)
 }
 
 func RegisterNodeServer(s *grpc.Server, srv NodeServer) {
@@ -244,7 +234,7 @@ func RegisterNodeServer(s *grpc.Server, srv NodeServer) {
 }
 
 func _Node_GetPredecessor_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Nil)
+	in := new(MT)
 	if err := codec.Unmarshal(buf, in); err != nil {
 		return nil, err
 	}
@@ -256,7 +246,7 @@ func _Node_GetPredecessor_Handler(srv interface{}, ctx context.Context, codec gr
 }
 
 func _Node_GetSuccessor_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(Nil)
+	in := new(MT)
 	if err := codec.Unmarshal(buf, in); err != nil {
 		return nil, err
 	}
@@ -364,7 +354,7 @@ func _Node_TransferKeys_Handler(srv interface{}, ctx context.Context, codec grpc
 }
 
 var _Node_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "pb.Node",
+	ServiceName: "gmaj.Node",
 	HandlerType: (*NodeServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -406,6 +396,201 @@ var _Node_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TransferKeys",
 			Handler:    _Node_TransferKeys_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for NodeAPI service
+
+type NodeAPIClient interface {
+	Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Val, error)
+	Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*MT, error)
+}
+
+type nodeAPIClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewNodeAPIClient(cc *grpc.ClientConn) NodeAPIClient {
+	return &nodeAPIClient{cc}
+}
+
+func (c *nodeAPIClient) Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Val, error) {
+	out := new(Val)
+	err := grpc.Invoke(ctx, "/gmaj.NodeAPI/Get", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeAPIClient) Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.NodeAPI/Put", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for NodeAPI service
+
+type NodeAPIServer interface {
+	Get(context.Context, *Key) (*Val, error)
+	Put(context.Context, *KeyVal) (*MT, error)
+}
+
+func RegisterNodeAPIServer(s *grpc.Server, srv NodeAPIServer) {
+	s.RegisterService(&_NodeAPI_serviceDesc, srv)
+}
+
+func _NodeAPI_Get_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(Key)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(NodeAPIServer).Get(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _NodeAPI_Put_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(KeyVal)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(NodeAPIServer).Put(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _NodeAPI_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "gmaj.NodeAPI",
+	HandlerType: (*NodeAPIServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Get",
+			Handler:    _NodeAPI_Get_Handler,
+		},
+		{
+			MethodName: "Put",
+			Handler:    _NodeAPI_Put_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
+}
+
+// Client API for MembershipServer service
+
+type MembershipServerClient interface {
+	AddNode(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error)
+	DelNode(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error)
+	GetNode(ctx context.Context, in *MT, opts ...grpc.CallOption) (*RemoteNode, error)
+}
+
+type membershipServerClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewMembershipServerClient(cc *grpc.ClientConn) MembershipServerClient {
+	return &membershipServerClient{cc}
+}
+
+func (c *membershipServerClient) AddNode(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.MembershipServer/AddNode", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *membershipServerClient) DelNode(ctx context.Context, in *RemoteNode, opts ...grpc.CallOption) (*MT, error) {
+	out := new(MT)
+	err := grpc.Invoke(ctx, "/gmaj.MembershipServer/DelNode", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *membershipServerClient) GetNode(ctx context.Context, in *MT, opts ...grpc.CallOption) (*RemoteNode, error) {
+	out := new(RemoteNode)
+	err := grpc.Invoke(ctx, "/gmaj.MembershipServer/GetNode", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for MembershipServer service
+
+type MembershipServerServer interface {
+	AddNode(context.Context, *RemoteNode) (*MT, error)
+	DelNode(context.Context, *RemoteNode) (*MT, error)
+	GetNode(context.Context, *MT) (*RemoteNode, error)
+}
+
+func RegisterMembershipServerServer(s *grpc.Server, srv MembershipServerServer) {
+	s.RegisterService(&_MembershipServer_serviceDesc, srv)
+}
+
+func _MembershipServer_AddNode_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(RemoteNode)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(MembershipServerServer).AddNode(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _MembershipServer_DelNode_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(RemoteNode)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(MembershipServerServer).DelNode(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _MembershipServer_GetNode_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(MT)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(MembershipServerServer).GetNode(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _MembershipServer_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "gmaj.MembershipServer",
+	HandlerType: (*MembershipServerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AddNode",
+			Handler:    _MembershipServer_AddNode_Handler,
+		},
+		{
+			MethodName: "DelNode",
+			Handler:    _MembershipServer_DelNode_Handler,
+		},
+		{
+			MethodName: "GetNode",
+			Handler:    _MembershipServer_GetNode_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

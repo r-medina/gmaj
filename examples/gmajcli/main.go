@@ -9,11 +9,13 @@ import (
 	"os"
 	"strings"
 
-	pb "github.com/r-medina/gmaj"
-	"github.com/r-medina/gmaj/gmaj"
+	"github.com/r-medina/gmaj"
 )
 
-func NodeStr(node *gmaj.Node) string {
+const prompt = "quit|node|table|addr|data|get|put > "
+
+// nodeToString takes a gmaj.Node and generates a short semi-descriptive string.
+func nodeToString(node *gmaj.Node) string {
 	var succ []byte
 	var pred []byte
 	if node.Successor != nil {
@@ -23,7 +25,9 @@ func NodeStr(node *gmaj.Node) string {
 		pred = node.Predecessor.Id
 	}
 
-	return fmt.Sprintf("Node-%v: {succ:%v, pred:%v}", node.Id, succ, pred)
+	return fmt.Sprintf(
+		"Node-%v: {succ:%v, pred:%v}", gmaj.IDToString(node.ID()), succ, pred,
+	)
 }
 
 func main() {
@@ -39,16 +43,19 @@ func main() {
 
 	flag.Parse()
 
-	var parent *pb.RemoteNode
+	var parent *gmaj.RemoteNode
 	if *addrPtr == "" {
 		parent = nil
 	} else {
-		parent = new(pb.RemoteNode)
+		parent = new(gmaj.RemoteNode)
 		val := big.NewInt(0)
 		val.SetString(*idPtr, 10)
 		parent.Id = val.Bytes()
 		parent.Addr = *addrPtr
-		fmt.Printf("Attach this node to id:%v, addr:%v\n", parent.Id, parent.Addr)
+		fmt.Printf(
+			"Attach this node to id:%v, addr:%v\n",
+			gmaj.IDToString(parent.Id), parent.Addr,
+		)
 	}
 
 	var err error
@@ -60,17 +67,14 @@ func main() {
 			log.Fatal(err)
 		}
 
-		if parent == nil {
-			parent = nodes[i].RemoteNode
-		}
 		fmt.Printf(
 			"Created -id %v -addr %v\n",
-			gmaj.IDToString(nodes[i].Id), nodes[i].Addr,
+			gmaj.IDToString(nodes[i].ID()), nodes[i].Addr(),
 		)
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("quit|node|table|addr|data|get|put > ")
+	fmt.Print(prompt)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		args := strings.SplitN(line, " ", 3)
@@ -78,11 +82,11 @@ func main() {
 		switch args[0] {
 		case "node":
 			for _, node := range nodes {
-				fmt.Println(NodeStr(node))
+				fmt.Println(nodeToString(node))
 			}
 		case "table":
 			for _, node := range nodes {
-				gmaj.PrintFingerTable(node)
+				fmt.Println(gmaj.FingerTableToString(node))
 			}
 		case "addr":
 			for _, node := range nodes {
@@ -114,10 +118,8 @@ func main() {
 				node.Shutdown()
 			}
 			return
-		default:
-			continue
 		}
 
-		fmt.Printf("quit|node|table|addr|data|get|put > ")
+		fmt.Print(prompt)
 	}
 }

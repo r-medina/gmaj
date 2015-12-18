@@ -13,8 +13,11 @@ const (
 	// IDLen is the length of IDs
 	IDLen = KeyLength / 8
 
+	// FixNextFingerInterval is the amount of time between runs of
+	// `fixNextFinger`
 	FixNextFingerInterval = time.Millisecond * 90
 
+	// StabilizeInterval is the amount of time gmaj should take to stabilize.
 	StabilizeInterval = time.Millisecond * 100
 )
 

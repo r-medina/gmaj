@@ -1,32 +1,33 @@
 package gmaj
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"math/big"
-
-	pb "github.com/r-medina/gmaj"
 )
 
-// FingerEntry represents a single finger table entry
-type FingerEntry struct {
-	StartID    []byte         // ID hash of (n + 2^i) mod (2^m)
-	RemoteNode *pb.RemoteNode // RemoteNode that Start points to
+type fingerTable []*fingerEntry
+
+// fingerEntry represents a single finger table entry
+type fingerEntry struct {
+	StartID    []byte      // ID hash of (n + 2^i) mod (2^m)
+	RemoteNode *RemoteNode // RemoteNode that Start points to
 }
 
 // NewFingerEntry returns an allocated new finger entry with the attributes set
-func NewFingerEntry(startID []byte, remoteNode *pb.RemoteNode) *FingerEntry {
-	return &FingerEntry{startID, remoteNode}
+func NewFingerEntry(startID []byte, remoteNode *RemoteNode) *fingerEntry {
+	return &fingerEntry{startID, remoteNode}
 }
 
 // initFingerTable creates initial finger table that only points to itself.
 // The table will be fixed later.
 func (node *Node) initFingerTable() {
-	node.FingerTable = make([]*FingerEntry, KeyLength)
-	for i := range node.FingerTable {
+	node.fingerTable = make([]*fingerEntry, KeyLength)
+	for i := range node.fingerTable {
 		node.ftMtx.Lock()
-		node.FingerTable[i] =
-			NewFingerEntry(fingerMath(node.Id, i, KeyLength), node.RemoteNode)
+		node.fingerTable[i] =
+			NewFingerEntry(fingerMath(node.remoteNode.Id, i, KeyLength), node.remoteNode)
 		node.ftMtx.Unlock()
 	}
 }
@@ -34,14 +35,14 @@ func (node *Node) initFingerTable() {
 // fixNextFinger runs periodically (in a seperate go routine)
 // to fix entries in our finger table.
 func (node *Node) fixNextFinger(next int) int {
-	nextHash := fingerMath(node.Id, next, KeyLength)
+	nextHash := fingerMath(node.remoteNode.Id, next, KeyLength)
 	successorNode, err := node.findSuccessor(nextHash)
 	if err != nil {
 		return next
 	}
 
 	node.ftMtx.Lock()
-	node.FingerTable[next] = NewFingerEntry(nextHash, successorNode)
+	node.fingerTable[next] = NewFingerEntry(nextHash, successorNode)
 	node.ftMtx.Unlock()
 
 	next++
@@ -66,15 +67,21 @@ func fingerMath(n []byte, i int, m int) []byte {
 	return res.Bytes()
 }
 
-// PrintFingerTable writes the contents of a node's finger table to stdout.
-func PrintFingerTable(node *Node) {
-	fmt.Printf("[%v] FingerTable:\n", IDToString(node.Id))
+// FingerTableToString takes a node and converts it's finger table into a string.
+func FingerTableToString(node *Node) string {
+	var buf bytes.Buffer
+
+	buf.WriteString(fmt.Sprintf("[%v] FingerTable:", IDToString(node.remoteNode.Id)))
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()
-	for _, val := range node.FingerTable {
-		fmt.Printf(
-			"\t{start:%v\tnodeLoc:%v %v}\n",
-			IDToString(val.StartID), IDToString(val.RemoteNode.Id), val.RemoteNode.Addr,
-		)
+	for _, val := range node.fingerTable {
+		buf.WriteString(fmt.Sprintf(
+			"\n\t{start:%v\tnodeLoc:%v %v}",
+			IDToString(val.StartID),
+			IDToString(val.RemoteNode.Id),
+			val.RemoteNode.Addr,
+		))
 	}
+
+	return buf.String()
 }

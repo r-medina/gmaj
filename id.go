@@ -27,8 +27,8 @@ func IDToString(id []byte) string {
 	return keyInt.String()
 }
 
-// EqualIDs returns if a and b are equal.
-func EqualIDs(a, b []byte) bool {
+// IDsEqual returns if a and b are equal.
+func IDsEqual(a, b []byte) bool {
 	return bytes.Equal(a, b)
 }
 
@@ -47,11 +47,11 @@ func AddIDs(a, b []byte) []byte {
 
 // Between returns if x is between a and b.
 // On this crude ascii Chord ring, x is between (a : b)
-//    ___
-//   /   \-a
-//  |     |
-// b-\   /-x
-//    ---
+//        ___
+//       /   \-a
+//      |     |
+//     b-\   /-x
+//        ---
 func Between(x, a, b []byte) bool {
 	// Allow for wraparounds by checking that
 	//  1) x > a and x < b when a < b or
@@ -77,7 +77,7 @@ func Between(x, a, b []byte) bool {
 func BetweenRightIncl(x, a, b []byte) bool {
 	isBetween := Between(x, a, b)
 	if !isBetween && bytes.Equal(x, b) {
-		isBetween = true
+		return true
 	}
 
 	return isBetween

@@ -2,8 +2,8 @@ package gmaj
 
 import (
 	"sync"
+	"time"
 
-	pb "github.com/r-medina/gmaj"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -18,7 +18,7 @@ var (
 )
 
 type clientConn struct {
-	client pb.NodeClient
+	client NodeClient
 	conn   *grpc.ClientConn
 }
 
@@ -27,27 +27,27 @@ type clientConn struct {
 //
 
 // GetPredecessorRPC gets the predecessor ID of a remote node.
-func GetPredecessorRPC(remoteNode *pb.RemoteNode) (*pb.RemoteNode, error) {
+func GetPredecessorRPC(remoteNode *RemoteNode) (*RemoteNode, error) {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetPredecessor(context.Background(), &pb.Nil{})
+	return client.GetPredecessor(context.Background(), mt)
 }
 
 // GetSuccessorRPC the successor ID of a remote node.
-func GetSuccessorRPC(remoteNode *pb.RemoteNode) (*pb.RemoteNode, error) {
+func GetSuccessorRPC(remoteNode *RemoteNode) (*RemoteNode, error) {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetSuccessor(context.Background(), &pb.Nil{})
+	return client.GetSuccessor(context.Background(), mt)
 }
 
 // SetPredecessorRPC noties a remote node that we believe we are its predecessor.
-func SetPredecessorRPC(remoteNode, newPred *pb.RemoteNode) error {
+func SetPredecessorRPC(remoteNode, newPred *RemoteNode) error {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func SetPredecessorRPC(remoteNode, newPred *pb.RemoteNode) error {
 }
 
 // SetSuccessorRPC sets the successor ID of a remote node.
-func SetSuccessorRPC(remoteNode, newSucc *pb.RemoteNode) error {
+func SetSuccessorRPC(remoteNode, newSucc *RemoteNode) error {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func SetSuccessorRPC(remoteNode, newSucc *pb.RemoteNode) error {
 }
 
 // Notify a remote node that pred is its predecessor
-func NotifyRPC(remoteNode, pred *pb.RemoteNode) error {
+func NotifyRPC(remoteNode, pred *RemoteNode) error {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return err
@@ -90,26 +90,26 @@ func NotifyRPC(remoteNode, pred *pb.RemoteNode) error {
 
 // Find the closest preceding finger from a remote node for an ID
 func ClosestPrecedingFingerRPC(
-	remoteNode *pb.RemoteNode, id []byte,
-) (*pb.RemoteNode, error) {
+	remoteNode *RemoteNode, id []byte,
+) (*RemoteNode, error) {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.ClosestPrecedingFinger(context.Background(), &pb.ID{id})
+	return client.ClosestPrecedingFinger(context.Background(), &ID{id})
 }
 
 // Find the successor node of a given ID in the entire ring
 func FindSuccessorRPC(
-	remoteNode *pb.RemoteNode, id []byte,
-) (*pb.RemoteNode, error) {
+	remoteNode *RemoteNode, id []byte,
+) (*RemoteNode, error) {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.FindSuccessor(context.Background(), &pb.ID{id})
+	return client.FindSuccessor(context.Background(), &ID{id})
 }
 
 //
@@ -117,13 +117,13 @@ func FindSuccessorRPC(
 //
 
 // Get a value from a remote node's datastore for a given key
-func GetRPC(remoteNode *pb.RemoteNode, key string) (string, error) {
+func GetRPC(remoteNode *RemoteNode, key string) (string, error) {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return "", err
 	}
 
-	val, err := client.Get(context.Background(), &pb.Key{key})
+	val, err := client.Get(context.Background(), &Key{key})
 	if err != nil {
 		return "", err
 	}
@@ -132,13 +132,13 @@ func GetRPC(remoteNode *pb.RemoteNode, key string) (string, error) {
 }
 
 // Put a key/value into a datastore on a remote node
-func PutRPC(remoteNode *pb.RemoteNode, key string, val string) error {
+func PutRPC(remoteNode *RemoteNode, key string, val string) error {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	if _, err := client.Put(context.Background(), &pb.KeyVal{key, val}); err != nil {
+	if _, err := client.Put(context.Background(), &KeyVal{key, val}); err != nil {
 		return err
 	}
 
@@ -149,14 +149,14 @@ func PutRPC(remoteNode *pb.RemoteNode, key string, val string) error {
 // IDs between (node.Id : predId]. This should trigger the
 // successor node to transfer the relevant keys back to node
 func TransferKeysRPC(
-	remoteNode *pb.RemoteNode, fromID []byte, toNode *pb.RemoteNode,
+	remoteNode *RemoteNode, fromID []byte, toNode *RemoteNode,
 ) error {
 	client, err := getNodeClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	_, err = client.TransferKeys(context.Background(), &pb.TransferMsg{fromID, toNode})
+	_, err = client.TransferKeys(context.Background(), &TransferMsg{fromID, toNode})
 	if err != nil {
 		return err
 	}
@@ -165,19 +165,21 @@ func TransferKeysRPC(
 }
 
 // Helper function to make a call to a remote node
-func getNodeClient(remoteNode *pb.RemoteNode) (pb.NodeClient, error) {
+func getNodeClient(remoteNode *RemoteNode) (NodeClient, error) {
 	// Dial the server if we don't already have a connection to it
 	remoteNodeAddr := remoteNode.Addr
 	connMtx.RLock()
 	cc, ok := connMap[remoteNodeAddr]
 	connMtx.RUnlock()
 	if !ok {
-		conn, err := grpc.Dial(remoteNodeAddr)
+		conn, err := grpc.Dial(
+			remoteNodeAddr, grpc.WithInsecure(), grpc.WithTimeout(5*time.Second),
+		)
 		if err != nil {
 			return nil, err
 		}
 
-		client := pb.NewNodeClient(conn)
+		client := NewNodeClient(conn)
 		cc = &clientConn{client, conn}
 		connMtx.Lock()
 		connMap[remoteNodeAddr] = cc

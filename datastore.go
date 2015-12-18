@@ -9,8 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	pb "github.com/r-medina/gmaj"
 )
 
 var errNoDatastore = errors.New("Node does not have a datastore")
@@ -64,8 +62,8 @@ func Put(node *Node, key string, value string) error {
 }
 
 // locate helps find the appropriate node in the ring.
-func (node *Node) locate(key string) (*pb.RemoteNode, error) {
-	return FindSuccessorRPC(node.RemoteNode, HashKey(key))
+func (node *Node) locate(key string) (*RemoteNode, error) {
+	return FindSuccessorRPC(node.remoteNode, HashKey(key))
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys
@@ -85,7 +83,7 @@ func (node *Node) obtainNewKeys() error {
 
 	return TransferKeysRPC(
 		node.Successor,
-		node.RemoteNode.Id,
+		node.remoteNode.Id,
 		prevPredecessor,
 	) // implicitly correct even when prevPredecessor.ID == nil
 }
@@ -94,7 +92,7 @@ func (node *Node) obtainNewKeys() error {
 // RPCs to assist with interfacing with the datastore ring
 //
 
-func (node *Node) get(k *pb.Key) (string, error) {
+func (node *Node) get(k *Key) (string, error) {
 	if node.dataStore == nil {
 		return "", errNoDatastore
 	}
@@ -109,7 +107,7 @@ func (node *Node) get(k *pb.Key) (string, error) {
 	return val, nil
 }
 
-func (node *Node) put(kv *pb.KeyVal) error {
+func (node *Node) put(kv *KeyVal) error {
 	if node.dataStore == nil {
 		return errNoDatastore
 	}
@@ -128,7 +126,7 @@ func (node *Node) put(kv *pb.KeyVal) error {
 	return nil
 }
 
-func (node *Node) transferKeys(tmsg *pb.TransferMsg) error {
+func (node *Node) transferKeys(tmsg *TransferMsg) error {
 	node.dsMtx.Lock()
 	defer node.dsMtx.Unlock()
 
@@ -140,7 +138,7 @@ func (node *Node) transferKeys(tmsg *pb.TransferMsg) error {
 		// the value in our predecessor.
 		if BetweenRightIncl(hashedKey, tmsg.FromID, toNode.Id) {
 			// Only put if node is not ourselves.
-			if toNode.Addr != node.Addr {
+			if toNode.Addr != node.remoteNode.Addr {
 				err := PutRPC(toNode, key, node.dataStore[key])
 				if err != nil {
 					return err
@@ -158,6 +156,6 @@ func (node *Node) transferKeys(tmsg *pb.TransferMsg) error {
 // PrintDataStore write the contents of a node's data store to stdout.
 func PrintDataStore(node *Node) {
 	node.dsMtx.RLock()
-	fmt.Printf("Node-%v datastore: %v\n", IDToString(node.Id), node.dataStore)
+	fmt.Printf("Node-%v datastore: %v\n", IDToString(node.remoteNode.Id), node.dataStore)
 	node.dsMtx.RUnlock()
 }
