@@ -11,7 +11,7 @@ import (
 
 // Node represents a node in the Chord mesh.
 type Node struct {
-	remoteNode *RemoteNode
+	remoteNode RemoteNode
 
 	grpcs *grpc.Server
 
@@ -45,7 +45,6 @@ func NewDefinedNode(parent *RemoteNode, id []byte) (*Node, error) {
 	}
 
 	node := new(Node)
-	node.remoteNode = new(RemoteNode)
 	node.grpcs = grpc.NewServer()
 	RegisterNodeServer(node.grpcs, node)
 
@@ -73,7 +72,7 @@ func NewDefinedNode(parent *RemoteNode, id []byte) (*Node, error) {
 			err = node.join(parent)
 		}
 	} else {
-		err = node.join(node.remoteNode)
+		err = node.join(&node.remoteNode)
 	}
 	if err != nil {
 		return nil, err
@@ -169,7 +168,7 @@ func (node *Node) stabilize() bool {
 	}
 
 	// TODO(r-medina): handle error (necessary?)
-	NotifyRPC(node.Successor, node.remoteNode)
+	NotifyRPC(node.Successor, &node.remoteNode)
 
 	return false
 }
@@ -213,7 +212,7 @@ func (node *Node) findSuccessor(id []byte) (*RemoteNode, error) {
 
 	// TODO(r-medina): make an error in the rpc stuff for empty responses?
 	if pred.Addr == "" {
-		return node.remoteNode, nil
+		return &node.remoteNode, nil
 	}
 
 	succ, err := GetSuccessorRPC(pred)
@@ -222,7 +221,7 @@ func (node *Node) findSuccessor(id []byte) (*RemoteNode, error) {
 	}
 
 	if succ.Addr == "" {
-		return node.remoteNode, nil
+		return &node.remoteNode, nil
 	}
 
 	return succ, nil
@@ -236,7 +235,7 @@ func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
 	succ, _ := GetSuccessorRPC(pred)
 
 	if succ == nil || succ.Addr == "" {
-		return node.remoteNode, nil
+		return &node.remoteNode, nil
 	}
 
 	var err error
@@ -247,7 +246,7 @@ func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
 		}
 
 		if pred.Addr == "" {
-			return node.remoteNode, nil
+			return &node.remoteNode, nil
 		}
 
 		succ, err = GetSuccessorRPC(pred)
@@ -256,7 +255,7 @@ func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
 		}
 
 		if succ.Addr == "" {
-			return node.remoteNode, nil
+			return &node.remoteNode, nil
 		}
 	}
 
@@ -280,7 +279,7 @@ func (node *Node) closestPrecedingFinger(id []byte) *RemoteNode {
 		}
 	}
 
-	return node.remoteNode
+	return &node.remoteNode
 }
 
 // Shutdown shuts down the Chord node (gracefully).

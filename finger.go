@@ -17,18 +17,24 @@ type fingerEntry struct {
 
 // NewFingerEntry returns an allocated new finger entry with the attributes set
 func NewFingerEntry(startID []byte, remoteNode *RemoteNode) *fingerEntry {
-	return &fingerEntry{startID, remoteNode}
+	return &fingerEntry{
+		StartID:    startID,
+		RemoteNode: remoteNode,
+	}
 }
 
 // initFingerTable creates initial finger table that only points to itself.
 // The table will be fixed later.
 func (node *Node) initFingerTable() {
+	node.ftMtx.Lock()
+	defer node.ftMtx.Unlock()
+
 	node.fingerTable = make([]*fingerEntry, KeyLength)
 	for i := range node.fingerTable {
-		node.ftMtx.Lock()
-		node.fingerTable[i] =
-			NewFingerEntry(fingerMath(node.remoteNode.Id, i, KeyLength), node.remoteNode)
-		node.ftMtx.Unlock()
+		node.fingerTable[i] = NewFingerEntry(
+			fingerMath(node.remoteNode.Id, i, KeyLength),
+			&node.remoteNode,
+		)
 	}
 }
 

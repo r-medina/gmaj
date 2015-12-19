@@ -63,7 +63,7 @@ func Put(node *Node, key string, value string) error {
 
 // locate helps find the appropriate node in the ring.
 func (node *Node) locate(key string) (*RemoteNode, error) {
-	return FindSuccessorRPC(node.remoteNode, HashKey(key))
+	return FindSuccessorRPC(&node.remoteNode, HashKey(key))
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys
