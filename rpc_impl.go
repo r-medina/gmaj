@@ -118,7 +118,7 @@ func (node *Node) Get(cntxt context.Context, k *Key) (*Val, error) {
 		return &Val{}, err
 	}
 
-	return &Val{val}, nil
+	return &Val{Val: val}, nil
 }
 
 // Put stores a key value pair on the node.

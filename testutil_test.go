@@ -1,17 +1,17 @@
 package gmaj
 
-import (
-	"testing"
-)
+import "testing"
 
 // Generally useful testing helper functions. Creates three successive nodes
 // with ids 0 (node1), 10 (node2) and 20 (node3).
 func create3SuccessiveNodes(t *testing.T) (*Node, *Node, *Node) {
-	definedID := make([]byte, KeyLength/8)
+	definedID := make([]byte, IDLen)
 	node1 := createDefinedNode(t, nil, definedID)
-	definedID[0] += 10
+	definedID = make([]byte, IDLen)
+	definedID[0] = 10
 	node2 := createDefinedNode(t, &node1.remoteNode, definedID)
-	definedID[0] += 10
+	definedID = make([]byte, IDLen)
+	definedID[0] = 20
 	node3 := createDefinedNode(t, &node1.remoteNode, definedID)
 	return node1, node2, node3
 }
