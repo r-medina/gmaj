@@ -116,9 +116,9 @@ func TestTransferKeys(t *testing.T) {
 	// Make node that should get the key transferred to it.
 	hashedKey = HashKey(key)
 	hashedKey[0]++
-	node2, _ := NewDefinedNode(&node1.remoteNode, hashedKey)
+	node2, _ := NewDefinedNode(node1.RemoteNode(), hashedKey)
 
-	<-time.After(50 * time.Millisecond)
+	<-time.After(666 * time.Millisecond)
 
 	// Make sure that "spacetravel!" is in node2.
 	if val, err := node2.get(&Key{Key: key}); err != nil {
@@ -158,9 +158,9 @@ func TestTransferKeysAvailability(t *testing.T) {
 	// Make node that should get the key transferred to it.
 	hashedKey = HashKey(key)
 	hashedKey[0]++
-	node2, _ := NewDefinedNode(&node1.remoteNode, hashedKey)
+	node2, _ := NewDefinedNode(node1.RemoteNode(), hashedKey)
 
-	<-time.After(50 * time.Millisecond)
+	<-time.After(666 * time.Millisecond)
 
 	// Make sure that "spacetravel!" is in node2.
 	if val, err := node2.get(&Key{Key: key}); err != nil {
@@ -241,7 +241,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 	}
 
 	definedID := make([]byte, IDLen)
-	node4 := createDefinedNode(t, &node3.remoteNode, definedID)
+	node4 := createDefinedNode(t, node3.RemoteNode(), definedID)
 
 	<-time.After(200 * time.Millisecond)
 

@@ -5,20 +5,19 @@ import (
 	"time"
 )
 
+// configuration constants
 const (
-	// KeyLength is the number of bits (i.e. M value),
-	// assumes <= 128 an divisible by 8
-	KeyLength = 8
+	KeyLength = 8 // the number of bits (i.e. M value), assumes <= 128 an divisible by 8
 
-	// IDLen is the length of IDs
 	IDLen = KeyLength / 8
 
-	// FixNextFingerInterval is the amount of time between runs of
-	// `fixNextFinger`
 	FixNextFingerInterval = time.Millisecond * 90
 
-	// StabilizeInterval is the amount of time gmaj should take to stabilize.
 	StabilizeInterval = time.Millisecond * 100
+
+	ConnTimeout = time.Second
+
+	RetryWait = time.Second
 )
 
 func init() {

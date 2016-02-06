@@ -9,10 +9,10 @@ func create3SuccessiveNodes(t *testing.T) (*Node, *Node, *Node) {
 	node1 := createDefinedNode(t, nil, definedID)
 	definedID = make([]byte, IDLen)
 	definedID[0] = 10
-	node2 := createDefinedNode(t, &node1.remoteNode, definedID)
+	node2 := createDefinedNode(t, node1.RemoteNode(), definedID)
 	definedID = make([]byte, IDLen)
 	definedID[0] = 20
-	node3 := createDefinedNode(t, &node1.remoteNode, definedID)
+	node3 := createDefinedNode(t, node1.RemoteNode(), definedID)
 	return node1, node2, node3
 }
 
@@ -31,7 +31,7 @@ func createDefinedNode(t *testing.T, ring *RemoteNode, id []byte) *Node {
 // Helper for GetSuccessor tests. Issues an RPC to check if node2 is a successor
 // of node1.
 func assertSuccessor(t *testing.T, node1, node2 *Node) {
-	if remoteNode, err := GetSuccessorRPC(&node1.remoteNode); err != nil {
+	if remoteNode, err := GetSuccessorRPC(node1.RemoteNode()); err != nil {
 		t.Fatalf("Unexpected error:%v", err)
 	} else if remoteNode.Addr != node2.Addr() {
 		t.Fatalf(
@@ -45,7 +45,7 @@ func assertSuccessor(t *testing.T, node1, node2 *Node) {
 // Helper for FindSuccessor tests. Issues an RPC to check that node is id's
 // successor.
 func assertSuccessorID(t *testing.T, id byte, node *Node) {
-	if remoteNode, err := FindSuccessorRPC(&node.remoteNode, []byte{id}); err != nil {
+	if remoteNode, err := FindSuccessorRPC(node.RemoteNode(), []byte{id}); err != nil {
 		t.Fatalf("Unexpected error:%v", err)
 	} else if remoteNode.Addr != node.Addr() {
 		t.Fatalf("Unexpected successor. Expected %v got %v",
@@ -97,7 +97,7 @@ func assertFingerTable(t *testing.T, node *Node, i int, node2 *Node) {
 // Helper for closest preceding finger. Asserts that closest is the closest
 // preceding finger to id according to node.
 func assertClosest(t *testing.T, node, closest *Node, id byte) {
-	remoteNode, err := ClosestPrecedingFingerRPC(&node.remoteNode, []byte{id})
+	remoteNode, err := ClosestPrecedingFingerRPC(node.RemoteNode(), []byte{id})
 	if err != nil {
 		t.Fatalf("Unexpected error while getting closest:%v", err)
 	} else if remoteNode.Addr != closest.Addr() {

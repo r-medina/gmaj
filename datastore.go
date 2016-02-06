@@ -35,7 +35,7 @@ func Get(node *Node, key string) (string, error) {
 	// (e.g. write happened while transferring nodes).
 	value, err := GetRPC(remoteNode, key)
 	if err != nil {
-		<-time.After(time.Second)
+		<-time.After(RetryWait)
 		remoteNode, err = node.locate(key)
 		if err != nil {
 			return "", err
@@ -156,6 +156,9 @@ func (node *Node) transferKeys(tmsg *TransferMsg) error {
 // PrintDataStore write the contents of a node's data store to stdout.
 func PrintDataStore(node *Node) {
 	node.dsMtx.RLock()
-	fmt.Printf("Node-%v datastore: %v\n", IDToString(node.remoteNode.Id), node.dataStore)
+	fmt.Printf(
+		"Node-%v datastore: %v\n",
+		IDToString(node.remoteNode.Id), node.dataStore,
+	)
 	node.dsMtx.RUnlock()
 }
