@@ -22,7 +22,7 @@ service Node {
     rpc TransferKeys(TransferMsg) returns (MT);
 }
 
-// NodeAPI is for wwriting client applications that are
+// NodeAPI is for writing client applications that are
 // completely agnostic of the Chord spec, but are aware
 service NodeAPI {
     rpc Get(Key) returns (Val);
