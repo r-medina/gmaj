@@ -83,7 +83,7 @@ func TestStabilizedFingerTable(t *testing.T) {
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
 	// Should be enough time to stabilize finger tables.
-	<-time.After(time.Second)
+	<-time.After(1500 * time.Millisecond)
 
 	tests := []struct {
 		n1 *Node

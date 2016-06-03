@@ -13,7 +13,7 @@ func TestSimple(t *testing.T) {
 
 func TestErrorCreationNodeExistingID(t *testing.T) {
 	node := createSimpleNode(t, nil)
-	if _, err := NewDefinedNode(&node.remoteNode, node.ID()); err == nil {
+	if _, err := NewDefinedNode(node.RemoteNode(), node.ID()); err == nil {
 		t.Errorf("Unexpected success creating a node with invalid id")
 	}
 }
