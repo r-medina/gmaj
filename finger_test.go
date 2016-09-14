@@ -2,6 +2,8 @@ package gmaj
 
 import (
 	"bytes"
+	"fmt"
+	"math/big"
 	"reflect"
 	"testing"
 	"time"
@@ -12,8 +14,8 @@ func TestInitFingerTable(t *testing.T) {
 
 	node.initFingerTable()
 
-	if size := len(node.fingerTable); size != KeyLength {
-		t.Fatalf("Expected finger table length %v, got %v.", KeyLength, size)
+	if size := len(node.fingerTable); size != cfg.KeyLength {
+		t.Fatalf("Expected finger table length %v, got %v.", cfg.KeyLength, size)
 	}
 
 	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.ID(), []byte{1})) {
@@ -56,25 +58,50 @@ func TestFixNextFinger(t *testing.T) {
 }
 
 func TestFingerMath(t *testing.T) {
+	config := *DefaultConfig
+	config.KeyLength = 8
+	config.IDLength = 1
+	if err := SetConfig(&config); err != nil {
+		t.Fatalf("unexpected error setting config: %v", err)
+	}
+	defer SetConfig(DefaultConfig)
+
 	tests := []struct {
-		n   []byte
+		n   int64
 		i   int
-		exp byte
+		exp int64
 	}{
-		{n: []byte{0}, i: 0, exp: 1},
-		{n: []byte{2}, i: 0, exp: 3},
-		{n: []byte{20}, i: 0, exp: 21},
-		{n: []byte{1}, i: 5, exp: 33},
-		{n: []byte{2}, i: 5, exp: 34},
-		{n: []byte{20}, i: 5, exp: 52},
-		{n: []byte{1, 0}, i: 0, exp: 1},
-		{n: []byte{1, 10}, i: 0, exp: 11},
+		{n: 0, i: 0, exp: 1},
+		{n: 2, i: 0, exp: 3},
+		{n: 8, i: 0, exp: 9},
+		{n: 64, i: 0, exp: 65},
+		{n: 256, i: 0, exp: 1},
+		{n: 10000, i: 0, exp: 17},
+		{n: 512130, i: 0, exp: 131},
+
+		{n: 0, i: 2, exp: 4},
+		{n: 2, i: 2, exp: 6},
+		{n: 8, i: 2, exp: 12},
+		{n: 64, i: 2, exp: 68},
+		{n: 256, i: 2, exp: 4},
+		{n: 10000, i: 2, exp: 20},
+		{n: 512130, i: 2, exp: 134},
+
+		{n: 0, i: 8, exp: 0},
+		{n: 2, i: 8, exp: 2},
+		{n: 8, i: 8, exp: 8},
+		{n: 64, i: 8, exp: 64},
+		{n: 256, i: 8, exp: 0},
+		{n: 10000, i: 8, exp: 16},
+		{n: 512130, i: 8, exp: 130},
 	}
 
-	for _, test := range tests {
-		want, got := test.exp, fingerMath(test.n, test.i, KeyLength)[0]
-		if got != want {
-			t.Fatalf("Expected %v, got %v.", want, got)
+	for i, test := range tests {
+		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, cfg.KeyLength)
+		want, got := big.NewInt(test.exp).Bytes(), result
+		if !bytes.Equal(got, want) {
+			t.Logf("running test [%02d]", i)
+			t.Fatalf("Expected %v, got %v.", test.exp, (&big.Int{}).SetBytes(result))
 		}
 	}
 }
@@ -83,7 +110,11 @@ func TestStabilizedFingerTable(t *testing.T) {
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
 	// Should be enough time to stabilize finger tables.
-	<-time.After(1500 * time.Millisecond)
+	<-time.After(2 * time.Second)
+
+	fmt.Printf("AFTER 1 %+v\n", node1)
+	fmt.Printf("AFTER 2 %+v\n", node2)
+	fmt.Printf("AFTER 3 %+v\n", node3)
 
 	tests := []struct {
 		n1 *Node
@@ -116,7 +147,15 @@ func TestStabilizedFingerTable(t *testing.T) {
 		{n1: node3, n2: node1, i: 7},
 	}
 
-	for _, test := range tests {
+	fmt.Printf("%+v\n", IDToString(node1.ID()))
+	fmt.Printf("%+v\n", IDToString(node2.ID()))
+	fmt.Printf("%+v\n", IDToString(node3.ID()))
+	fmt.Println(FingerTableToString(node1))
+	fmt.Println(FingerTableToString(node2))
+	fmt.Println(FingerTableToString(node3))
+
+	for i, test := range tests {
+		t.Logf("running test [%02d]", i)
 		assertFingerTable(t, test.n1, test.i, test.n2)
 	}
 }

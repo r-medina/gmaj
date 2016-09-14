@@ -35,11 +35,12 @@ func Get(node *Node, key string) (string, error) {
 	// (e.g. write happened while transferring nodes).
 	value, err := GetRPC(remoteNode, key)
 	if err != nil {
-		<-time.After(RetryWait)
+		<-time.After(cfg.RetryInterval)
 		remoteNode, err = node.locate(key)
 		if err != nil {
 			return "", err
 		}
+
 		return GetRPC(remoteNode, key)
 	}
 
@@ -92,13 +93,13 @@ func (node *Node) obtainNewKeys() error {
 // RPCs to assist with interfacing with the datastore ring
 //
 
-func (node *Node) get(k *Key) (string, error) {
+func (node *Node) get(key *Key) (string, error) {
 	if node.dataStore == nil {
 		return "", errNoDatastore
 	}
 
 	node.dsMtx.RLock()
-	val, ok := node.dataStore[k.Key]
+	val, ok := node.dataStore[key.Key]
 	node.dsMtx.RUnlock()
 	if !ok {
 		return "", errors.New("Key does not exist")
@@ -107,20 +108,23 @@ func (node *Node) get(k *Key) (string, error) {
 	return val, nil
 }
 
-func (node *Node) put(kv *KeyVal) error {
+func (node *Node) put(keyVal *KeyVal) error {
 	if node.dataStore == nil {
 		return errNoDatastore
 	}
 
+	key := keyVal.Key
+	val := keyVal.Val
+
 	node.dsMtx.RLock()
-	_, exists := node.dataStore[kv.Key]
+	_, exists := node.dataStore[key]
 	node.dsMtx.RUnlock()
 	if exists {
 		return errors.New("Cannot modify an existing value")
 	}
 
 	node.dsMtx.Lock()
-	node.dataStore[kv.Key] = kv.Val
+	node.dataStore[key] = val
 	node.dsMtx.Unlock()
 
 	return nil

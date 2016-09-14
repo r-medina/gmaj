@@ -7,13 +7,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// DefaultDialOptions specify the default options with which to make GRPC
-// connections.
-var DefaultDialOptions = []grpc.DialOption{
-	grpc.WithInsecure(),
-	grpc.WithTimeout(ConnTimeout),
-}
-
 //
 // RPC connection map cache
 //
@@ -180,7 +173,9 @@ func getNodeClient(remoteNode *RemoteNode, dialOpts ...grpc.DialOption) (NodeCli
 	connMtx.RUnlock()
 	if !ok {
 		conn, err := grpc.Dial(
-			remoteNodeAddr, append(DefaultDialOptions, dialOpts...)...,
+			remoteNodeAddr,
+			// only way to do per-node credentials I can think of...
+			append(cfg.DialOptions, dialOpts...)...,
 		)
 		if err != nil {
 			return nil, err

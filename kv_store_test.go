@@ -240,7 +240,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 		}
 	}
 
-	definedID := make([]byte, IDLen)
+	definedID := make([]byte, cfg.IDLength)
 	node4 := createDefinedNode(t, node3.RemoteNode(), definedID)
 
 	<-time.After(200 * time.Millisecond)

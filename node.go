@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
 )
 
 // Node represents a node in the Chord mesh.
@@ -30,7 +31,11 @@ type Node struct {
 	dsMtx     sync.RWMutex      // RWLock for datastore
 
 	dialOpts []grpc.DialOption
+
+	log grpclog.Logger
 }
+
+var _ NodeServer = (*Node)(nil)
 
 // NewNode creates a Chord node with random ID based on listener address.
 func NewNode(parent *RemoteNode, opts ...grpc.DialOption) (*Node, error) {
@@ -88,7 +93,7 @@ func NewDefinedNode(
 	go func() {
 		for {
 			select {
-			case <-time.After(StabilizeInterval):
+			case <-time.After(cfg.StabilizeInterval):
 				node.stabilize()
 			case <-node.shutdownCh:
 				return
@@ -101,7 +106,7 @@ func NewDefinedNode(
 		next := 0
 		for {
 			select {
-			case <-time.After(FixNextFingerInterval):
+			case <-time.After(cfg.FixNextFingerInterval):
 				next = node.fixNextFinger(next)
 			case <-node.shutdownCh:
 				return
@@ -193,9 +198,7 @@ func (node *Node) notify(remoteNode *RemoteNode) {
 	}
 
 	var prevID []byte
-	if node.Predecessor == nil {
-		prevID = nil
-	} else {
+	if node.Predecessor != nil {
 		prevID = node.Predecessor.Id
 	}
 
@@ -235,16 +238,28 @@ func (node *Node) findSuccessor(id []byte) (*RemoteNode, error) {
 // findPredecessor finds the node's predecessor. This implements psuedocode from
 // figure 4 of chord paper.
 func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
-	pred := node.closestPrecedingFinger(id)
-	// TODO(asubiotto): Handle error?
-	succ, _ := GetSuccessorRPC(pred, node.dialOpts...)
-
-	if succ == nil || succ.Addr == "" {
-		return &node.remoteNode, nil
+	pred := &node.remoteNode
+	node.succMtx.Lock()
+	succ := node.Successor
+	node.succMtx.Unlock()
+	if succ == nil {
+		return pred, nil
+	}
+	if !BetweenRightIncl(id, pred.Id, succ.Id) {
+		pred = node.closestPrecedingFinger(id)
+	} else {
+		return pred, nil
 	}
 
-	var err error
+	// TODO(asubiotto): Handle error?
+	succ, _ = GetSuccessorRPC(pred, node.dialOpts...)
+
+	if succ == nil || succ.Addr == "" {
+		return pred, nil
+	}
+
 	for !BetweenRightIncl(id, pred.Id, succ.Id) {
+		var err error
 		pred, err = ClosestPrecedingFingerRPC(succ, id, node.dialOpts...)
 		if err != nil {
 			return nil, err
@@ -270,13 +285,26 @@ func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
 // closestPrecedingFinger finds the closest preceding finger in the table.
 // This implements pseudocode from figure 4 of chord paper.
 func (node *Node) closestPrecedingFinger(id []byte) *RemoteNode {
+	toPrint := IDsEqual(node.remoteNode.Id, []byte{0})
+
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()
-	for i := KeyLength - 1; i >= 0; i-- {
+
+	for i := cfg.KeyLength - 1; i >= 0; i-- {
 		n := node.fingerTable[i]
 		if n.RemoteNode == nil {
 			continue
 		}
+
+		if toPrint {
+			// fmt.Printf(
+			// 	"n.RemoteNode.Id %s, node.remoteNode.Id %s, id %s\n",
+			// 	IDToString(n.RemoteNode.Id),
+			// 	IDToString(node.remoteNode.Id),
+			// 	IDToString(id),
+			// )
+		}
+
 		// Check that the node we believe is the successor for
 		// (node + 2^i) mod 2^m also precedes id.
 		if Between(n.RemoteNode.Id, node.remoteNode.Id, id) {
@@ -311,5 +339,5 @@ func (node *Node) Shutdown() {
 	}
 	connMtx.Unlock()
 	node.grpcs.Stop()
-	<-time.After(StabilizeInterval)
+	<-time.After(cfg.StabilizeInterval)
 }
