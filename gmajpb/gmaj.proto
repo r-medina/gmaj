@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package gmaj;
+package gmajpb;
 
 // Node is the service for inter-node communication.
 // This has all the RPC functions needed to maintain
