@@ -291,7 +291,7 @@ func (node *Node) closestPrecedingFinger(id []byte) *RemoteNode {
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()
 
-	for i := cfg.KeyLength - 1; i >= 0; i-- {
+	for i := cfg.KeySize - 1; i >= 0; i-- {
 		n := node.fingerTable[i]
 		if n.RemoteNode == nil {
 			continue

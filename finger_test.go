@@ -15,8 +15,8 @@ func TestInitFingerTable(t *testing.T) {
 
 	node.initFingerTable()
 
-	if size := len(node.fingerTable); size != cfg.KeyLength {
-		t.Fatalf("Expected finger table length %v, got %v.", cfg.KeyLength, size)
+	if size := len(node.fingerTable); size != cfg.KeySize {
+		t.Fatalf("Expected finger table length %v, got %v.", cfg.KeySize, size)
 	}
 
 	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.ID(), []byte{1})) {
@@ -62,7 +62,7 @@ func TestFixNextFinger(t *testing.T) {
 
 func TestFingerMath(t *testing.T) {
 	config := *DefaultConfig
-	config.KeyLength = 8
+	config.KeySize = 8
 	config.IDLength = 1
 	if err := SetConfig(&config); err != nil {
 		t.Fatalf("unexpected error setting config: %v", err)
@@ -100,7 +100,7 @@ func TestFingerMath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, cfg.KeyLength)
+		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, cfg.KeySize)
 		want, got := big.NewInt(test.exp).Bytes(), result
 		if !bytes.Equal(got, want) {
 			t.Logf("running test [%02d]", i)

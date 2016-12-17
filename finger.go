@@ -28,10 +28,10 @@ func (node *Node) initFingerTable() {
 	node.ftMtx.Lock()
 	defer node.ftMtx.Unlock()
 
-	node.fingerTable = make([]*fingerEntry, cfg.KeyLength)
+	node.fingerTable = make([]*fingerEntry, cfg.KeySize)
 	for i := range node.fingerTable {
 		node.fingerTable[i] = NewFingerEntry(
-			fingerMath(node.remoteNode.Id, i, cfg.KeyLength),
+			fingerMath(node.remoteNode.Id, i, cfg.KeySize),
 			&node.remoteNode,
 		)
 	}
@@ -40,7 +40,7 @@ func (node *Node) initFingerTable() {
 // fixNextFinger runs periodically (in a seperate go routine)
 // to fix entries in our finger table.
 func (node *Node) fixNextFinger(next int) int {
-	nextHash := fingerMath(node.remoteNode.Id, next, cfg.KeyLength)
+	nextHash := fingerMath(node.remoteNode.Id, next, cfg.KeySize)
 	successorNode, err := node.findSuccessor(nextHash)
 	if err != nil {
 		return next
@@ -51,17 +51,8 @@ func (node *Node) fixNextFinger(next int) int {
 	node.fingerTable[next] = finger
 	node.ftMtx.Unlock()
 
-	return (next + 1) % cfg.KeyLength
+	return (next + 1) % cfg.KeySize
 }
-
-var max = func() *big.Int {
-	max := big.NewInt(2)
-	for i := 0; i < 128; i++ {
-		max.Mul(max, big.NewInt(2))
-	}
-
-	return max
-}()
 
 // fingerMath does the `(n + 2^i) mod (2^m)` operation
 // needed to update finger table entries.
