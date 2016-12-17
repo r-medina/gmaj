@@ -171,22 +171,24 @@ func getNodeClient(remoteNode *RemoteNode, dialOpts ...grpc.DialOption) (NodeCli
 	connMtx.RLock()
 	cc, ok := connMap[remoteNodeAddr]
 	connMtx.RUnlock()
-	if !ok {
-		conn, err := grpc.Dial(
-			remoteNodeAddr,
-			// only way to do per-node credentials I can think of...
-			append(cfg.DialOptions, dialOpts...)...,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		client := NewNodeClient(conn)
-		cc = &clientConn{client, conn}
-		connMtx.Lock()
-		connMap[remoteNodeAddr] = cc
-		connMtx.Unlock()
+	if ok {
+		return cc.client, nil
 	}
 
-	return cc.client, nil
+	conn, err := grpc.Dial(
+		remoteNodeAddr,
+		// only way to do per-node credentials I can think of...
+		append(cfg.DialOptions, dialOpts...)...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	client := NewNodeClient(conn)
+	cc = &clientConn{client, conn}
+	connMtx.Lock()
+	connMap[remoteNodeAddr] = cc
+	connMtx.Unlock()
+
+	return client, nil
 }

@@ -84,6 +84,7 @@ func NewDefinedNode(
 		}
 	} else {
 		err = node.join(&node.remoteNode)
+
 	}
 	if err != nil {
 		return nil, err
@@ -113,6 +114,8 @@ func NewDefinedNode(
 			}
 		}
 	}()
+
+	<-time.After(cfg.StabilizeInterval)
 
 	return node, nil
 }
@@ -285,8 +288,6 @@ func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
 // closestPrecedingFinger finds the closest preceding finger in the table.
 // This implements pseudocode from figure 4 of chord paper.
 func (node *Node) closestPrecedingFinger(id []byte) *RemoteNode {
-	toPrint := IDsEqual(node.remoteNode.Id, []byte{0})
-
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()
 
@@ -294,15 +295,6 @@ func (node *Node) closestPrecedingFinger(id []byte) *RemoteNode {
 		n := node.fingerTable[i]
 		if n.RemoteNode == nil {
 			continue
-		}
-
-		if toPrint {
-			// fmt.Printf(
-			// 	"n.RemoteNode.Id %s, node.remoteNode.Id %s, id %s\n",
-			// 	IDToString(n.RemoteNode.Id),
-			// 	IDToString(node.remoteNode.Id),
-			// 	IDToString(id),
-			// )
 		}
 
 		// Check that the node we believe is the successor for

@@ -2,7 +2,6 @@ package gmaj
 
 import (
 	"bytes"
-	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
@@ -10,6 +9,8 @@ import (
 )
 
 func TestInitFingerTable(t *testing.T) {
+	t.Parallel()
+
 	node := createSimpleNode(t, nil)
 
 	node.initFingerTable()
@@ -30,6 +31,8 @@ func TestInitFingerTable(t *testing.T) {
 }
 
 func TestFixNextFinger(t *testing.T) {
+	t.Parallel()
+
 	node1 := new(Node)
 	node1.remoteNode.Id = []byte{10}
 	node1.remoteNode.Addr = "localhost"
@@ -110,11 +113,7 @@ func TestStabilizedFingerTable(t *testing.T) {
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
 	// Should be enough time to stabilize finger tables.
-	<-time.After(2 * time.Second)
-
-	fmt.Printf("AFTER 1 %+v\n", node1)
-	fmt.Printf("AFTER 2 %+v\n", node2)
-	fmt.Printf("AFTER 3 %+v\n", node3)
+	<-time.After(testTimeout)
 
 	tests := []struct {
 		n1 *Node
@@ -125,18 +124,20 @@ func TestStabilizedFingerTable(t *testing.T) {
 		{n1: node1, n2: node2, i: 1},
 		{n1: node1, n2: node2, i: 2},
 		{n1: node1, n2: node2, i: 3},
-		{n1: node1, n2: node3, i: 4},
-		{n1: node1, n2: node1, i: 5},
-		{n1: node1, n2: node1, i: 6},
-		{n1: node1, n2: node1, i: 7},
+		{n1: node1, n2: node2, i: 4},
+		{n1: node1, n2: node2, i: 5},
+		{n1: node1, n2: node3, i: 6},
+		{n1: node1, n2: node3, i: 7},
+
 		{n1: node2, n2: node3, i: 0},
 		{n1: node2, n2: node3, i: 1},
 		{n1: node2, n2: node3, i: 2},
 		{n1: node2, n2: node3, i: 3},
-		{n1: node2, n2: node1, i: 4},
-		{n1: node2, n2: node1, i: 5},
-		{n1: node2, n2: node1, i: 6},
+		{n1: node2, n2: node3, i: 4},
+		{n1: node2, n2: node3, i: 5},
+		{n1: node2, n2: node3, i: 6},
 		{n1: node2, n2: node1, i: 7},
+
 		{n1: node3, n2: node1, i: 0},
 		{n1: node3, n2: node1, i: 1},
 		{n1: node3, n2: node1, i: 2},
@@ -144,18 +145,16 @@ func TestStabilizedFingerTable(t *testing.T) {
 		{n1: node3, n2: node1, i: 4},
 		{n1: node3, n2: node1, i: 5},
 		{n1: node3, n2: node1, i: 6},
-		{n1: node3, n2: node1, i: 7},
+		{n1: node3, n2: node2, i: 7},
 	}
 
-	fmt.Printf("%+v\n", IDToString(node1.ID()))
-	fmt.Printf("%+v\n", IDToString(node2.ID()))
-	fmt.Printf("%+v\n", IDToString(node3.ID()))
-	fmt.Println(FingerTableToString(node1))
-	fmt.Println(FingerTableToString(node2))
-	fmt.Println(FingerTableToString(node3))
-
 	for i, test := range tests {
-		t.Logf("running test [%02d]", i)
-		assertFingerTable(t, test.n1, test.i, test.n2)
+		want := test.n2.ID()
+		got := test.n1.fingerTable[test.i].RemoteNode.Id
+
+		if !reflect.DeepEqual(got, want) {
+			t.Logf("running test [%02d]", i)
+			t.Errorf("Expected %v, got %v", want, got)
+		}
 	}
 }

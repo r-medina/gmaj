@@ -6,6 +6,8 @@ import (
 )
 
 func TestGetNilNode(t *testing.T) {
+	t.Parallel()
+
 	_, err := Get(nil, "")
 	if err == nil {
 		t.Fatal("Unexpected success getting value from nil node")
@@ -13,6 +15,8 @@ func TestGetNilNode(t *testing.T) {
 }
 
 func TestGetNoDataStore(t *testing.T) {
+	t.Parallel()
+
 	node := new(Node)
 	_, err := node.get(new(Key))
 	if err == nil {
@@ -21,6 +25,8 @@ func TestGetNoDataStore(t *testing.T) {
 }
 
 func TestGetNonExistentKey(t *testing.T) {
+	t.Parallel()
+
 	node, _ := NewNode(nil)
 	_, err := Get(node, "test")
 	if err == nil {
@@ -34,6 +40,8 @@ func TestGetNonExistentKey(t *testing.T) {
 }
 
 func TestGetKey(t *testing.T) {
+	t.Parallel()
+
 	node, _ := NewNode(nil)
 
 	if err := Put(node, "test", "value"); err != nil {
@@ -51,6 +59,8 @@ func TestGetKey(t *testing.T) {
 }
 
 func TestPutNilNode(t *testing.T) {
+	t.Parallel()
+
 	err := Put(nil, "", "")
 	if err == nil {
 		t.Fatal("Unexpected success putting value in nil node")
@@ -58,6 +68,8 @@ func TestPutNilNode(t *testing.T) {
 }
 
 func TestPutNoDataStore(t *testing.T) {
+	t.Parallel()
+
 	node := new(Node)
 	err := Put(node, "", "")
 	if err == nil {
@@ -66,6 +78,8 @@ func TestPutNoDataStore(t *testing.T) {
 }
 
 func TestPutModifyExistingKey(t *testing.T) {
+	t.Parallel()
+
 	node, _ := NewNode(nil)
 
 	err := Put(node, "test", "value")
@@ -90,6 +104,8 @@ func TestPutModifyExistingKey(t *testing.T) {
 }
 
 func TestPutKey(t *testing.T) {
+	t.Parallel()
+
 	node, _ := NewNode(nil)
 
 	if err := Put(node, "test", "value"); err != nil {
@@ -102,6 +118,8 @@ func TestPutKey(t *testing.T) {
 }
 
 func TestTransferKeys(t *testing.T) {
+	t.Parallel()
+
 	key := "myKey"
 	hashedKey := HashKey(key)
 
@@ -118,7 +136,7 @@ func TestTransferKeys(t *testing.T) {
 	hashedKey[0]++
 	node2, _ := NewDefinedNode(node1.RemoteNode(), hashedKey)
 
-	<-time.After(666 * time.Millisecond)
+	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
 	if val, err := node2.get(&Key{Key: key}); err != nil {
@@ -141,16 +159,23 @@ func TestTransferKeysAvailability(t *testing.T) {
 		t.Fatalf("Unexpected error putting value:%v\n", err)
 	}
 
+	done := make(chan struct{})
+
 	// Start up goroutine to check key availability.
 	go func() {
 		for {
-			value, err := Get(node1, key)
-			if err != nil {
-				t.Fatalf("Unexpected error checking key availability:%v\n", err)
+			select {
+			case <-done:
 				return
-			} else if value != "spacetravel!" {
-				t.Fatalf("Unexpected value")
-				return
+			default:
+				value, err := Get(node1, key)
+				if err != nil {
+					t.Fatalf("Unexpected error checking key availability: %v\n", err)
+					return
+				} else if value != "spacetravel!" {
+					t.Fatalf("Unexpected value")
+					return
+				}
 			}
 		}
 	}()
@@ -160,7 +185,7 @@ func TestTransferKeysAvailability(t *testing.T) {
 	hashedKey[0]++
 	node2, _ := NewDefinedNode(node1.RemoteNode(), hashedKey)
 
-	<-time.After(666 * time.Millisecond)
+	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
 	if val, err := node2.get(&Key{Key: key}); err != nil {
@@ -168,12 +193,51 @@ func TestTransferKeysAvailability(t *testing.T) {
 	} else if val != "spacetravel!" {
 		t.Fatalf("Unexpected value")
 	}
-	<-time.After(5 * time.Second)
+	<-time.After(testTimeout)
+
+	close(done)
 }
 
-// This tests a bug we were experiencing where values from the initial node were note
-// being transfered over upon its shutdown.
+func TestKeyTransferAfterShutdownSimple(t *testing.T) {
+	t.Parallel()
+
+	node1 := createSimpleNode(t, nil)
+
+	Put(node1, "1", "1")
+	Put(node1, "2", "2")
+	Put(node1, "3", "3")
+	Put(node1, "4", "4")
+	Put(node1, "5", "5")
+	Put(node1, "6", "6")
+	Put(node1, "7", "7")
+
+	// stores all the data in chord
+	data := make(map[string]string)
+	for k, v := range node1.dataStore {
+		data[k] = v
+	}
+
+	node2 := createSimpleNode(t, node1.RemoteNode())
+	<-time.After(testTimeout)
+
+	// makes sure that all the data is still available somewhere
+	for k, vExp := range data {
+		vRet, err := Get(node2, k)
+		if err != nil {
+			t.Fatalf("Unexpected error getting value from node2 getting key %v: %v\n", k, err)
+		}
+
+		if vRet != vExp {
+			t.Fatalf("Unexpected return value. Expected %v, got %v\n", vExp, vRet)
+		}
+	}
+}
+
+// This tests a bug we were experiencing where values from the initial node were
+// not being transfered over upon its shutdown.
 func TestKeyTransferAfterShutdown(t *testing.T) {
+	t.Parallel()
+
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
 	time.Sleep(time.Millisecond * 200)
@@ -202,9 +266,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 
 	// makes sure node1 transfered its keys
 	if l := len(node1.dataStore); l > 0 {
-		t.Fatalf(
-			"node1 should not have anything left in its data, but there are %v items\n", l,
-		)
+		t.Fatalf("node1 should not have anything left in its data, but there are %v items\n", l)
 	}
 
 	// makes sure that all the data is still available somewhere
@@ -223,9 +285,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 
 	// makes sure node3 transfered its keys
 	if l := len(node2.dataStore); l > 0 {
-		t.Fatalf(
-			"node2 should not have anything left in its data, but there are %v items\n", l,
-		)
+		t.Fatalf("node2 should not have anything left in its data, but there are %v items\n", l)
 	}
 
 	// makes sure that all the data is still available somewhere
@@ -243,7 +303,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 	definedID := make([]byte, cfg.IDLength)
 	node4 := createDefinedNode(t, node3.RemoteNode(), definedID)
 
-	<-time.After(200 * time.Millisecond)
+	<-time.After(testTimeout)
 
 	node3.Shutdown()
 

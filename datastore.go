@@ -78,7 +78,6 @@ func (node *Node) obtainNewKeys() error {
 	// Assume new predecessor has been set.
 	prevPredecessor, err := GetPredecessorRPC(node.Successor)
 	if err != nil {
-
 		return err
 	}
 
@@ -131,10 +130,15 @@ func (node *Node) put(keyVal *KeyVal) error {
 }
 
 func (node *Node) transferKeys(tmsg *TransferMsg) error {
+	toNode := tmsg.ToNode
+	if IDsEqual(toNode.Id, node.ID()) {
+		return nil
+	}
+
 	node.dsMtx.Lock()
 	defer node.dsMtx.Unlock()
 
-	toNode := tmsg.ToNode
+	toDelete := []string{}
 	for key := range node.dataStore {
 		hashedKey := HashKey(key)
 
@@ -149,9 +153,12 @@ func (node *Node) transferKeys(tmsg *TransferMsg) error {
 				}
 			}
 
-			// Remove entry from dataStore
-			delete(node.dataStore, key)
+			toDelete = append(toDelete, key)
 		}
+	}
+
+	for _, key := range toDelete {
+		delete(node.dataStore, key)
 	}
 
 	return nil

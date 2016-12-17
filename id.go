@@ -59,14 +59,14 @@ func Between(x, a, b []byte) bool {
 
 	// Allow for wraparounds by checking that
 	//  1) x > a and x < b when a < b or
-	//  2) x < a and x < b when a > b or
+	//  2) x < a or x < b when a > b or
 	//  3) x > a and x > b when a > b or
 	//  4) x < a or x > a when a == b
 	switch aInt.Cmp(bInt) {
 	case -1:
 		return (xInt.Cmp(aInt) > 0) && (xInt.Cmp(bInt) < 0)
 	case 1:
-		return (xInt.Cmp(aInt) < 0) && (xInt.Cmp(bInt) > 0)
+		return (xInt.Cmp(aInt) > 0) || (xInt.Cmp(bInt) < 0)
 	case 0:
 		return xInt.Cmp(aInt) != 0
 	}

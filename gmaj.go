@@ -21,14 +21,18 @@ var (
 // DefaultConfig is the default configuration.
 var DefaultConfig = &Config{
 	KeyLength:             dfltkeyLen,
-	IDLength:              dfltkeyLen / 8,
+	IDLength:              dfltkeyLen / 8, // key length bytes
 	FixNextFingerInterval: 25 * time.Millisecond,
 	StabilizeInterval:     75 * time.Millisecond,
-	RetryInterval:         time.Second,
+	RetryInterval:         150 * time.Millisecond,
 	DialOptions: []grpc.DialOption{
 		grpc.WithInsecure(), // TODO(ricky): find a better way to use this for testing
 		grpc.WithTimeout(time.Second),
 	},
+}
+
+func init() {
+	SetConfig(DefaultConfig)
 }
 
 // Config contains all the configuration information for a gmaj node.
@@ -64,8 +68,4 @@ func SetConfig(config *Config) error {
 	cfg = *config
 
 	return nil
-}
-
-func init() {
-	SetConfig(DefaultConfig)
 }
