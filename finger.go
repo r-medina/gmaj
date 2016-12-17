@@ -3,7 +3,6 @@ package gmaj
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"math/big"
 )
 
@@ -29,10 +28,10 @@ func (node *Node) initFingerTable() {
 	node.ftMtx.Lock()
 	defer node.ftMtx.Unlock()
 
-	node.fingerTable = make([]*fingerEntry, KeyLength)
+	node.fingerTable = make([]*fingerEntry, cfg.KeySize)
 	for i := range node.fingerTable {
 		node.fingerTable[i] = NewFingerEntry(
-			fingerMath(node.remoteNode.Id, i, KeyLength),
+			fingerMath(node.remoteNode.Id, i, cfg.KeySize),
 			&node.remoteNode,
 		)
 	}
@@ -41,34 +40,30 @@ func (node *Node) initFingerTable() {
 // fixNextFinger runs periodically (in a seperate go routine)
 // to fix entries in our finger table.
 func (node *Node) fixNextFinger(next int) int {
-	nextHash := fingerMath(node.remoteNode.Id, next, KeyLength)
+	nextHash := fingerMath(node.remoteNode.Id, next, cfg.KeySize)
 	successorNode, err := node.findSuccessor(nextHash)
 	if err != nil {
 		return next
 	}
 
+	finger := NewFingerEntry(nextHash, successorNode)
 	node.ftMtx.Lock()
-	node.fingerTable[next] = NewFingerEntry(nextHash, successorNode)
+	node.fingerTable[next] = finger
 	node.ftMtx.Unlock()
 
-	next++
-	if next > KeyLength-1 {
-		return 0
-	}
-
-	return next
+	return (next + 1) % cfg.KeySize
 }
 
 // fingerMath does the `(n + 2^i) mod (2^m)` operation
 // needed to update finger table entries.
 func fingerMath(n []byte, i int, m int) []byte {
-	iInt := big.NewInt(int64(math.Pow(2, float64(i))))
-	mInt := big.NewInt(int64(math.Pow(2, float64(m))))
+	iInt := big.NewInt(2)
+	iInt.Exp(iInt, big.NewInt(int64(i)), max)
+	mInt := big.NewInt(2)
+	mInt.Exp(mInt, big.NewInt(int64(m)), max)
 
 	res := &big.Int{} // res will pretty much be an accumulator
-	res.SetBytes(n)
-	res = res.Add(res, iInt)
-	res = res.Mod(res, mInt)
+	res.SetBytes(n).Add(res, iInt).Mod(res, mInt)
 
 	return res.Bytes()
 }
@@ -78,11 +73,13 @@ func FingerTableToString(node *Node) string {
 	var buf bytes.Buffer
 
 	buf.WriteString(fmt.Sprintf("[%v] FingerTable:", IDToString(node.remoteNode.Id)))
+
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()
+
 	for _, val := range node.fingerTable {
 		buf.WriteString(fmt.Sprintf(
-			"\n\t{start:%v\tnodeLoc:%v %v}",
+			"\n\t{start:%v\tnodeID:%v %v}",
 			IDToString(val.StartID),
 			IDToString(val.RemoteNode.Id),
 			val.RemoteNode.Addr,

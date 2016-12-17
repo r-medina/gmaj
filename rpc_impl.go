@@ -39,7 +39,7 @@ func (node *Node) GetSuccessor(context.Context, *MT) (*RemoteNode, error) {
 
 // SetPredecessor sets the predecessor on the node.
 func (node *Node) SetPredecessor(
-	cntxt context.Context, pred *RemoteNode,
+	ctxt context.Context, pred *RemoteNode,
 ) (*MT, error) {
 	node.predMtx.Lock()
 	node.Predecessor = pred
@@ -50,7 +50,7 @@ func (node *Node) SetPredecessor(
 
 // SetSuccessor sets the successor on the node.
 func (node *Node) SetSuccessor(
-	cntx context.Context, succ *RemoteNode,
+	ctx context.Context, succ *RemoteNode,
 ) (*MT, error) {
 	node.succMtx.Lock()
 	node.Successor = succ
@@ -61,7 +61,7 @@ func (node *Node) SetSuccessor(
 
 // Notify is called when remoteNode thinks its our successor
 func (node *Node) Notify(
-	cntxt context.Context, remoteNode *RemoteNode,
+	ctx context.Context, remoteNode *RemoteNode,
 ) (*MT, error) {
 	if remoteNode == nil {
 		return mt, errors.New("remoteNode cannot be nil")
@@ -85,7 +85,7 @@ func (node *Node) Notify(
 // ClosestPrecedingFinger will find the closes preceding entry in the finger
 // table based on the id.
 func (node *Node) ClosestPrecedingFinger(
-	cntxt context.Context, id *ID,
+	ctxt context.Context, id *ID,
 ) (*RemoteNode, error) {
 	remoteNode := node.closestPrecedingFinger(id.Id)
 	if remoteNode == nil {
@@ -97,7 +97,7 @@ func (node *Node) ClosestPrecedingFinger(
 
 // FindSuccessor finds the successor, error if nil.
 func (node *Node) FindSuccessor(
-	cntxt context.Context, id *ID,
+	ctxt context.Context, id *ID,
 ) (*RemoteNode, error) {
 	succ, err := node.findSuccessor(id.Id)
 	if err != nil {
@@ -112,18 +112,18 @@ func (node *Node) FindSuccessor(
 }
 
 // Get returns the value of the key requested at the node.
-func (node *Node) Get(cntxt context.Context, k *Key) (*Val, error) {
-	val, err := node.get(k)
+func (node *Node) Get(ctxt context.Context, key *Key) (*Val, error) {
+	val, err := node.get(key)
 	if err != nil {
-		return &Val{}, err
+		return nil, err
 	}
 
 	return &Val{Val: val}, nil
 }
 
 // Put stores a key value pair on the node.
-func (node *Node) Put(cntxt context.Context, kv *KeyVal) (*MT, error) {
-	if err := node.put(kv); err != nil {
+func (node *Node) Put(ctxt context.Context, keyVal *KeyVal) (*MT, error) {
+	if err := node.put(keyVal); err != nil {
 		return mt, err
 	}
 
@@ -133,7 +133,7 @@ func (node *Node) Put(cntxt context.Context, kv *KeyVal) (*MT, error) {
 // TransferKeys transfers the appropriate keys on this node
 // to the remote node specified in the request.
 func (node *Node) TransferKeys(
-	cntxt context.Context, tmsg *TransferMsg,
+	ctxt context.Context, tmsg *TransferMsg,
 ) (*MT, error) {
 	if err := node.transferKeys(tmsg); err != nil {
 		return mt, err
