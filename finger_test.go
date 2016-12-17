@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/r-medina/gmaj/gmajcfg"
 )
 
 func TestInitFingerTable(t *testing.T) {
@@ -61,13 +63,13 @@ func TestFixNextFinger(t *testing.T) {
 }
 
 func TestFingerMath(t *testing.T) {
-	config := *DefaultConfig
+	config := *gmajcfg.DefaultConfig
 	config.KeySize = 8
 	config.IDLength = 1
 	if err := SetConfig(&config); err != nil {
 		t.Fatalf("unexpected error setting config: %v", err)
 	}
-	defer SetConfig(DefaultConfig)
+	defer SetConfig(gmajcfg.DefaultConfig)
 
 	tests := []struct {
 		n   int64
@@ -150,7 +152,9 @@ func TestStabilizedFingerTable(t *testing.T) {
 
 	for i, test := range tests {
 		want := test.n2.ID()
+		test.n1.ftMtx.RLock()
 		got := test.n1.fingerTable[test.i].RemoteNode.Id
+		test.n1.ftMtx.RUnlock()
 
 		if !reflect.DeepEqual(got, want) {
 			t.Logf("running test [%02d]", i)

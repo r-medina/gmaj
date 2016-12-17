@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/r-medina/gmaj/gmajpb"
 )
 
 var errNoDatastore = errors.New("Node does not have a datastore")
@@ -63,7 +65,7 @@ func Put(node *Node, key string, value string) error {
 }
 
 // locate helps find the appropriate node in the ring.
-func (node *Node) locate(key string) (*RemoteNode, error) {
+func (node *Node) locate(key string) (*gmajpb.RemoteNode, error) {
 	return FindSuccessorRPC(&node.remoteNode, HashKey(key))
 }
 
@@ -92,7 +94,7 @@ func (node *Node) obtainNewKeys() error {
 // RPCs to assist with interfacing with the datastore ring
 //
 
-func (node *Node) get(key *Key) (string, error) {
+func (node *Node) get(key *gmajpb.Key) (string, error) {
 	if node.dataStore == nil {
 		return "", errNoDatastore
 	}
@@ -107,7 +109,7 @@ func (node *Node) get(key *Key) (string, error) {
 	return val, nil
 }
 
-func (node *Node) put(keyVal *KeyVal) error {
+func (node *Node) put(keyVal *gmajpb.KeyVal) error {
 	if node.dataStore == nil {
 		return errNoDatastore
 	}
@@ -129,7 +131,7 @@ func (node *Node) put(keyVal *KeyVal) error {
 	return nil
 }
 
-func (node *Node) transferKeys(tmsg *TransferMsg) error {
+func (node *Node) transferKeys(tmsg *gmajpb.TransferMsg) error {
 	toNode := tmsg.ToNode
 	if IDsEqual(toNode.Id, node.ID()) {
 		return nil

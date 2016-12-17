@@ -3,6 +3,8 @@ package gmaj
 import (
 	"testing"
 	"time"
+
+	"github.com/r-medina/gmaj/gmajpb"
 )
 
 var testTimeout = 400 * time.Millisecond
@@ -21,11 +23,11 @@ func create3SuccessiveNodes(t *testing.T) (*Node, *Node, *Node) {
 	return node1, node2, node3
 }
 
-func createSimpleNode(t *testing.T, ring *RemoteNode) *Node {
+func createSimpleNode(t *testing.T, ring *gmajpb.RemoteNode) *Node {
 	return createDefinedNode(t, ring, nil)
 }
 
-func createDefinedNode(t *testing.T, ring *RemoteNode, id []byte) *Node {
+func createDefinedNode(t *testing.T, ring *gmajpb.RemoteNode, id []byte) *Node {
 	node, err := NewDefinedNode(ring, id)
 	if err != nil {
 		t.Fatalf("Unable to create node, received error:%v", err)

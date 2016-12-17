@@ -3,6 +3,8 @@ package gmaj
 import (
 	"testing"
 	"time"
+
+	"github.com/r-medina/gmaj/gmajpb"
 )
 
 func TestGetNilNode(t *testing.T) {
@@ -18,7 +20,7 @@ func TestGetNoDataStore(t *testing.T) {
 	t.Parallel()
 
 	node := new(Node)
-	_, err := node.get(new(Key))
+	_, err := node.get(new(gmajpb.Key))
 	if err == nil {
 		t.Fatal("Unexpected success getting value from nil datastore")
 	}
@@ -139,7 +141,7 @@ func TestTransferKeys(t *testing.T) {
 	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
-	if val, err := node2.get(&Key{Key: key}); err != nil {
+	if val, err := node2.get(&gmajpb.Key{Key: key}); err != nil {
 		t.Fatalf("Unexpected error getting value from node2: %v", err)
 	} else if val != "spacetravel!" {
 		t.Fatalf("Unexpected value")
@@ -188,7 +190,7 @@ func TestTransferKeysAvailability(t *testing.T) {
 	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
-	if val, err := node2.get(&Key{Key: key}); err != nil {
+	if val, err := node2.get(&gmajpb.Key{Key: key}); err != nil {
 		t.Fatalf("Unexpected error getting value from node2:%v\n", err)
 	} else if val != "spacetravel!" {
 		t.Fatalf("Unexpected value")

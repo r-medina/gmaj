@@ -60,18 +60,25 @@ func TestNotifySimpleCorrect(t *testing.T) {
 
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
-	// Artificially set predecessor pointers to something so that notify does
-	// not succeed due to predecessors being nil.
-	node1.Predecessor = node2.RemoteNode()
-	node2.Predecessor = node3.RemoteNode()
-	node3.Predecessor = node1.RemoteNode()
+	// Manually stabilize the predecessor pointers.
+	node1.predMtx.Lock()
+	node1.Predecessor = node3.RemoteNode()
+	node1.predMtx.Unlock()
 
-	if err := NotifyRPC(node1.RemoteNode(), node2.RemoteNode()); err != nil {
+	node2.predMtx.Lock()
+	node2.Predecessor = node1.RemoteNode()
+	node2.predMtx.Unlock()
+
+	node3.predMtx.Lock()
+	node3.Predecessor = node2.RemoteNode()
+	node3.predMtx.Unlock()
+
+	if err := NotifyRPC(node1.RemoteNode(), node3.RemoteNode()); err != nil {
 		t.Fatalf("Unexpected error notifying node: %v", err)
 	}
 
 	// Tests that notify wraps around correctly.
-	if err := NotifyRPC(node1.RemoteNode(), node3.RemoteNode()); err != nil {
+	if err := NotifyRPC(node3.RemoteNode(), node2.RemoteNode()); err != nil {
 		t.Fatalf("Unexpected error notifying node: %v", err)
 	}
 }
@@ -82,9 +89,17 @@ func TestNotifySimpleIncorrect(t *testing.T) {
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
 	// Manually stabilize the predecessor pointers.
+	node1.predMtx.Lock()
 	node1.Predecessor = node3.RemoteNode()
+	node1.predMtx.Unlock()
+
+	node2.predMtx.Lock()
 	node2.Predecessor = node1.RemoteNode()
+	node2.predMtx.Unlock()
+
+	node3.predMtx.Lock()
 	node3.Predecessor = node2.RemoteNode()
+	node3.predMtx.Unlock()
 
 	if err := NotifyRPC(node2.RemoteNode(), node3.RemoteNode()); err == nil {
 		t.Fatalf("Unexpected success notifying node1")

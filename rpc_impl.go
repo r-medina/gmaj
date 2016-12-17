@@ -3,16 +3,18 @@ package gmaj
 import (
 	"errors"
 
+	"github.com/r-medina/gmaj/gmajpb"
+
 	"golang.org/x/net/context"
 )
 
 var (
-	emptyRemote = new(RemoteNode)
-	mt          = new(MT)
+	emptyRemote = &gmajpb.RemoteNode{}
+	mt          = &gmajpb.MT{}
 )
 
 // GetPredecessor gets the predecessor on the node.
-func (node *Node) GetPredecessor(context.Context, *MT) (*RemoteNode, error) {
+func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode, error) {
 	node.predMtx.RLock()
 	pred := node.Predecessor
 	node.predMtx.RUnlock()
@@ -25,7 +27,7 @@ func (node *Node) GetPredecessor(context.Context, *MT) (*RemoteNode, error) {
 }
 
 // GetSuccessor gets the successor on the node..
-func (node *Node) GetSuccessor(context.Context, *MT) (*RemoteNode, error) {
+func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode, error) {
 	node.succMtx.RLock()
 	succ := node.Successor
 	node.succMtx.RUnlock()
@@ -39,8 +41,8 @@ func (node *Node) GetSuccessor(context.Context, *MT) (*RemoteNode, error) {
 
 // SetPredecessor sets the predecessor on the node.
 func (node *Node) SetPredecessor(
-	ctxt context.Context, pred *RemoteNode,
-) (*MT, error) {
+	ctx context.Context, pred *gmajpb.RemoteNode,
+) (*gmajpb.MT, error) {
 	node.predMtx.Lock()
 	node.Predecessor = pred
 	node.predMtx.Unlock()
@@ -50,8 +52,8 @@ func (node *Node) SetPredecessor(
 
 // SetSuccessor sets the successor on the node.
 func (node *Node) SetSuccessor(
-	ctx context.Context, succ *RemoteNode,
-) (*MT, error) {
+	ctx context.Context, succ *gmajpb.RemoteNode,
+) (*gmajpb.MT, error) {
 	node.succMtx.Lock()
 	node.Successor = succ
 	node.succMtx.Unlock()
@@ -59,10 +61,10 @@ func (node *Node) SetSuccessor(
 	return mt, nil
 }
 
-// Notify is called when remoteNode thinks its our successor
+// Notify is called when remoteNode thinks it's our predecessor.
 func (node *Node) Notify(
-	ctx context.Context, remoteNode *RemoteNode,
-) (*MT, error) {
+	ctx context.Context, remoteNode *gmajpb.RemoteNode,
+) (*gmajpb.MT, error) {
 	if remoteNode == nil {
 		return mt, errors.New("remoteNode cannot be nil")
 	}
@@ -70,12 +72,11 @@ func (node *Node) Notify(
 	node.notify(remoteNode)
 
 	// If node.Predecessor is nil at this point, we were trying to notify
-	// ourselves. Otherwise, to succeed, we must check that the predecessor
+	// ourselves. Otherwise, to succeed, we must check that the successor
 	// was correctly updated.
 	node.predMtx.Lock()
 	defer node.predMtx.Unlock()
-	if node.Predecessor != nil &&
-		!IDsEqual(node.Predecessor.Id, remoteNode.Id) {
+	if node.Predecessor != nil && !IDsEqual(node.Predecessor.Id, remoteNode.Id) {
 		return mt, errors.New("remoteNode is not node's predecessor")
 	}
 
@@ -85,8 +86,8 @@ func (node *Node) Notify(
 // ClosestPrecedingFinger will find the closes preceding entry in the finger
 // table based on the id.
 func (node *Node) ClosestPrecedingFinger(
-	ctxt context.Context, id *ID,
-) (*RemoteNode, error) {
+	ctx context.Context, id *gmajpb.ID,
+) (*gmajpb.RemoteNode, error) {
 	remoteNode := node.closestPrecedingFinger(id.Id)
 	if remoteNode == nil {
 		return emptyRemote, errors.New("MT node closest preceding finger")
@@ -97,8 +98,8 @@ func (node *Node) ClosestPrecedingFinger(
 
 // FindSuccessor finds the successor, error if nil.
 func (node *Node) FindSuccessor(
-	ctxt context.Context, id *ID,
-) (*RemoteNode, error) {
+	ctx context.Context, id *gmajpb.ID,
+) (*gmajpb.RemoteNode, error) {
 	succ, err := node.findSuccessor(id.Id)
 	if err != nil {
 		return emptyRemote, err
@@ -112,17 +113,17 @@ func (node *Node) FindSuccessor(
 }
 
 // Get returns the value of the key requested at the node.
-func (node *Node) Get(ctxt context.Context, key *Key) (*Val, error) {
+func (node *Node) Get(ctx context.Context, key *gmajpb.Key) (*gmajpb.Val, error) {
 	val, err := node.get(key)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Val{Val: val}, nil
+	return &gmajpb.Val{Val: val}, nil
 }
 
 // Put stores a key value pair on the node.
-func (node *Node) Put(ctxt context.Context, keyVal *KeyVal) (*MT, error) {
+func (node *Node) Put(ctx context.Context, keyVal *gmajpb.KeyVal) (*gmajpb.MT, error) {
 	if err := node.put(keyVal); err != nil {
 		return mt, err
 	}
@@ -133,8 +134,8 @@ func (node *Node) Put(ctxt context.Context, keyVal *KeyVal) (*MT, error) {
 // TransferKeys transfers the appropriate keys on this node
 // to the remote node specified in the request.
 func (node *Node) TransferKeys(
-	ctxt context.Context, tmsg *TransferMsg,
-) (*MT, error) {
+	ctx context.Context, tmsg *gmajpb.TransferMsg,
+) (*gmajpb.MT, error) {
 	if err := node.transferKeys(tmsg); err != nil {
 		return mt, err
 	}

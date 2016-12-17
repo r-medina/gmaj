@@ -6,20 +6,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/r-medina/gmaj/gmajpb"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
 
 // Node represents a node in the Chord mesh.
 type Node struct {
-	remoteNode RemoteNode
+	remoteNode gmajpb.RemoteNode
 
 	grpcs *grpc.Server
 
-	Predecessor *RemoteNode // This Node's predecessor
+	Predecessor *gmajpb.RemoteNode // This Node's predecessor
 	predMtx     sync.RWMutex
 
-	Successor *RemoteNode // This Node's successor
+	Successor *gmajpb.RemoteNode // This Node's successor
 	succMtx   sync.RWMutex
 
 	shutdownCh chan struct{}
@@ -35,17 +37,17 @@ type Node struct {
 	log grpclog.Logger
 }
 
-var _ NodeServer = (*Node)(nil)
+var _ gmajpb.NodeServer = (*Node)(nil)
 
 // NewNode creates a Chord node with random ID based on listener address.
-func NewNode(parent *RemoteNode, opts ...grpc.DialOption) (*Node, error) {
+func NewNode(parent *gmajpb.RemoteNode, opts ...grpc.DialOption) (*Node, error) {
 	return NewDefinedNode(parent, nil, opts...)
 }
 
 // NewDefinedNode creates a Chord node with a pre-defined ID (useful for
 // testing) if a non-nil id is provided.
 func NewDefinedNode(
-	parent *RemoteNode, id []byte, dialOpts ...grpc.DialOption,
+	parent *gmajpb.RemoteNode, id []byte, dialOpts ...grpc.DialOption,
 ) (*Node, error) {
 	lis, err := net.Listen("tcp", "")
 	if err != nil {
@@ -57,7 +59,7 @@ func NewDefinedNode(
 		dialOpts:   dialOpts,
 	}
 	node.grpcs = grpc.NewServer()
-	RegisterNodeServer(node.grpcs, node)
+	gmajpb.RegisterNodeServer(node.grpcs, node)
 
 	if id != nil {
 		node.remoteNode.Id = id
@@ -120,8 +122,8 @@ func NewDefinedNode(
 	return node, nil
 }
 
-// RemoteNode returns a pointer to the RemoteNode of the node.
-func (node *Node) RemoteNode() *RemoteNode {
+// RemoteNode returns a pointer to the gmajpb.RemoteNode of the node.
+func (node *Node) RemoteNode() *gmajpb.RemoteNode {
 	remoteNode := node.remoteNode
 	return &remoteNode
 }
@@ -141,7 +143,7 @@ func (node *Node) Addr() string {
 
 // join allows this node to join an existing ring that a remote node
 // is a part of (i.e., other).
-func (node *Node) join(other *RemoteNode) error {
+func (node *Node) join(other *gmajpb.RemoteNode) error {
 	succ, err := FindSuccessorRPC(other, node.remoteNode.Id, node.dialOpts...)
 	if err != nil {
 		return err
@@ -188,7 +190,7 @@ func (node *Node) stabilize() {
 
 // notify is called when a remote node thinks its our predecessor. This is an
 // implementation of the psuedocode from figure 7 of chord paper.
-func (node *Node) notify(remoteNode *RemoteNode) {
+func (node *Node) notify(remoteNode *gmajpb.RemoteNode) {
 	node.predMtx.Lock()
 	defer node.predMtx.Unlock()
 
@@ -209,13 +211,15 @@ func (node *Node) notify(remoteNode *RemoteNode) {
 	node.Predecessor = remoteNode
 
 	if Between(node.Predecessor.Id, prevID, node.remoteNode.Id) {
-		node.transferKeys(&TransferMsg{prevID, node.Predecessor})
+		node.transferKeys(
+			&gmajpb.TransferMsg{FromID: prevID, ToNode: node.Predecessor},
+		)
 	}
 }
 
 // findSuccessor finds the node's successor. This implements psuedocode from
 // figure 4 of chord paper.
-func (node *Node) findSuccessor(id []byte) (*RemoteNode, error) {
+func (node *Node) findSuccessor(id []byte) (*gmajpb.RemoteNode, error) {
 	pred, err := node.findPredecessor(id)
 	if err != nil {
 		return nil, err
@@ -240,7 +244,7 @@ func (node *Node) findSuccessor(id []byte) (*RemoteNode, error) {
 
 // findPredecessor finds the node's predecessor. This implements psuedocode from
 // figure 4 of chord paper.
-func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
+func (node *Node) findPredecessor(id []byte) (*gmajpb.RemoteNode, error) {
 	pred := &node.remoteNode
 	node.succMtx.Lock()
 	succ := node.Successor
@@ -287,7 +291,7 @@ func (node *Node) findPredecessor(id []byte) (*RemoteNode, error) {
 
 // closestPrecedingFinger finds the closest preceding finger in the table.
 // This implements pseudocode from figure 4 of chord paper.
-func (node *Node) closestPrecedingFinger(id []byte) *RemoteNode {
+func (node *Node) closestPrecedingFinger(id []byte) *gmajpb.RemoteNode {
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()
 
@@ -317,7 +321,7 @@ func (node *Node) Shutdown() {
 	node.succMtx.RLock()
 	if node.remoteNode.Addr != node.Successor.Addr {
 		node.predMtx.Lock()
-		node.transferKeys(&TransferMsg{node.Predecessor.Id, node.Successor})
+		node.transferKeys(&gmajpb.TransferMsg{FromID: node.Predecessor.Id, ToNode: node.Successor})
 		SetPredecessorRPC(node.Successor, node.Predecessor, node.dialOpts...)
 		SetSuccessorRPC(node.Predecessor, node.Successor, node.dialOpts...)
 		node.predMtx.Unlock()

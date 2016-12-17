@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+
+	"github.com/r-medina/gmaj/gmajpb"
 )
 
 type fingerTable []*fingerEntry
 
 // fingerEntry represents a single finger table entry
 type fingerEntry struct {
-	StartID    []byte      // ID hash of (n + 2^i) mod (2^m)
-	RemoteNode *RemoteNode // RemoteNode that Start points to
+	StartID    []byte             // ID hash of (n + 2^i) mod (2^m)
+	RemoteNode *gmajpb.RemoteNode // RemoteNode that Start points to
 }
 
 // NewFingerEntry returns an allocated new finger entry with the attributes set
-func NewFingerEntry(startID []byte, remoteNode *RemoteNode) *fingerEntry {
+func NewFingerEntry(startID []byte, remoteNode *gmajpb.RemoteNode) *fingerEntry {
 	return &fingerEntry{
 		StartID:    startID,
 		RemoteNode: remoteNode,
