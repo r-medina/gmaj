@@ -76,19 +76,24 @@ func NewDefinedNode(
 	go node.grpcs.Serve(lis)
 
 	// Join this node to the same chord ring as parent
+	var joinNode *gmajpb.RemoteNode
 	if parent != nil {
 		// Ask if our id exists on the ring.
-		remoteNode, _ := FindSuccessorRPC(parent, node.remoteNode.Id, dialOpts...)
-		if IDsEqual(remoteNode.Id, node.remoteNode.Id) {
-			err = errors.New("Node with id already exists")
-		} else {
-			err = node.join(parent)
+		remoteNode, err := FindSuccessorRPC(parent, node.remoteNode.Id, dialOpts...)
+		if err != nil {
+			return nil, err
 		}
-	} else {
-		err = node.join(&node.remoteNode)
 
+		if IDsEqual(remoteNode.Id, node.remoteNode.Id) {
+			return nil, errors.New("Node with id already exists")
+		}
+
+		joinNode = parent
+	} else {
+		joinNode = &node.remoteNode
 	}
-	if err != nil {
+
+	if err = node.join(joinNode); err != nil {
 		return nil, err
 	}
 
@@ -329,11 +334,12 @@ func (node *Node) Shutdown() {
 	node.succMtx.RUnlock()
 
 	connMtx.Lock()
-	for addr, cc := range connMap {
+	for _, cc := range clientConns {
 		cc.conn.Close()
-		delete(connMap, addr)
 	}
+	clientConns = make(map[string]*clientConn)
 	connMtx.Unlock()
 	node.grpcs.Stop()
+
 	<-time.After(cfg.StabilizeInterval)
 }

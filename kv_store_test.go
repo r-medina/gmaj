@@ -29,9 +29,11 @@ func TestGetNoDataStore(t *testing.T) {
 func TestGetNonExistentKey(t *testing.T) {
 	t.Parallel()
 
-	node, _ := NewNode(nil)
-	_, err := Get(node, "test")
-	if err == nil {
+	node, err := NewNode(nil)
+	if err != nil {
+		t.Fatalf("unexpected error making node: %v", err)
+	}
+	if _, err := Get(node, "test"); err == nil {
 		t.Fatal("Unexpected success getting non-existent key")
 	}
 
@@ -44,8 +46,10 @@ func TestGetNonExistentKey(t *testing.T) {
 func TestGetKey(t *testing.T) {
 	t.Parallel()
 
-	node, _ := NewNode(nil)
-
+	node, err := NewNode(nil)
+	if err != nil {
+		t.Fatalf("unexpected error making node: %v", err)
+	}
 	if err := Put(node, "test", "value"); err != nil {
 		t.Fatalf("Unexpected error putting value: %v", err)
 	}
@@ -82,10 +86,11 @@ func TestPutNoDataStore(t *testing.T) {
 func TestPutModifyExistingKey(t *testing.T) {
 	t.Parallel()
 
-	node, _ := NewNode(nil)
-
-	err := Put(node, "test", "value")
+	node, err := NewNode(nil)
 	if err != nil {
+		t.Fatalf("unexpected error making node: %v", err)
+	}
+	if err := Put(node, "test", "value"); err != nil {
 		t.Fatalf("Unexpected failure putting value: %v", err)
 	}
 
@@ -93,9 +98,7 @@ func TestPutModifyExistingKey(t *testing.T) {
 		t.Fatal("Unexpected error value not set")
 	}
 
-	err = Put(node, "test", "value2")
-
-	if err == nil {
+	if err = Put(node, "test", "value2"); err == nil {
 		t.Fatal("Unexpected success modifying immutable key")
 	}
 
@@ -108,14 +111,23 @@ func TestPutModifyExistingKey(t *testing.T) {
 func TestPutKey(t *testing.T) {
 	t.Parallel()
 
-	node, _ := NewNode(nil)
-
-	if err := Put(node, "test", "value"); err != nil {
-		t.Fatalf("Unexpected error putting value: %v", err)
+	node, err := NewNode(nil)
+	if err != nil {
+		t.Fatalf("unexpected error making new node: %v", err)
 	}
 
-	if value, _ := Get(node, "test"); value != "value" {
-		t.Fatalf("Unexpected entry in node datastore")
+	key, val := "test", "value"
+	if err := Put(node, key, val); err != nil {
+		t.Fatalf("Unexpected error putting value %q with key %q: %v", val, key, err)
+	}
+
+	_val, err := Get(node, "test")
+	if err != nil {
+		t.Fatalf("unexpected error getting value with key %q: %v", key, err)
+	}
+
+	if want, got := val, _val; want != want {
+		t.Fatalf("expected %q, got %q", want, got)
 	}
 }
 
@@ -127,8 +139,10 @@ func TestTransferKeys(t *testing.T) {
 
 	// Make node that will be successor to hashed_key.
 	hashedKey[0] += 2
-	node1, _ := NewDefinedNode(nil, hashedKey)
-
+	node1, err := NewDefinedNode(nil, hashedKey)
+	if err != nil {
+		t.Fatalf("unexpected error making new node: %v", err)
+	}
 	if err := Put(node1, key, "spacetravel!"); err != nil {
 		t.Fatalf("Unexpected error putting value: %v", err)
 	}
@@ -136,7 +150,10 @@ func TestTransferKeys(t *testing.T) {
 	// Make node that should get the key transferred to it.
 	hashedKey = HashKey(key)
 	hashedKey[0]++
-	node2, _ := NewDefinedNode(node1.RemoteNode(), hashedKey)
+	node2, err := NewDefinedNode(node1.RemoteNode(), hashedKey)
+	if err != nil {
+		t.Fatalf("unexpected error making new node: %v", err)
+	}
 
 	<-time.After(testTimeout)
 
@@ -155,7 +172,10 @@ func TestTransferKeysAvailability(t *testing.T) {
 
 	// Make node that will be successor to hashed_key.
 	hashedKey[0] += 2
-	node1, _ := NewDefinedNode(nil, hashedKey)
+	node1, err := NewDefinedNode(nil, hashedKey)
+	if err != nil {
+		t.Fatalf("unexpected error making new node: %v", err)
+	}
 
 	if err := Put(node1, key, "spacetravel!"); err != nil {
 		t.Fatalf("Unexpected error putting value:%v\n", err)
@@ -185,7 +205,10 @@ func TestTransferKeysAvailability(t *testing.T) {
 	// Make node that should get the key transferred to it.
 	hashedKey = HashKey(key)
 	hashedKey[0]++
-	node2, _ := NewDefinedNode(node1.RemoteNode(), hashedKey)
+	node2, err := NewDefinedNode(node1.RemoteNode(), hashedKey)
+	if err != nil {
+		t.Fatalf("unexpected error making new node: %v", err)
+	}
 
 	<-time.After(testTimeout)
 

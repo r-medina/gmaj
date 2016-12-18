@@ -16,8 +16,8 @@ type fingerEntry struct {
 	RemoteNode *gmajpb.RemoteNode // RemoteNode that Start points to
 }
 
-// NewFingerEntry returns an allocated new finger entry with the attributes set
-func NewFingerEntry(startID []byte, remoteNode *gmajpb.RemoteNode) *fingerEntry {
+// newFingerEntry returns an allocated new finger entry with the attributes set
+func newFingerEntry(startID []byte, remoteNode *gmajpb.RemoteNode) *fingerEntry {
 	return &fingerEntry{
 		StartID:    startID,
 		RemoteNode: remoteNode,
@@ -32,7 +32,7 @@ func (node *Node) initFingerTable() {
 
 	node.fingerTable = make([]*fingerEntry, cfg.KeySize)
 	for i := range node.fingerTable {
-		node.fingerTable[i] = NewFingerEntry(
+		node.fingerTable[i] = newFingerEntry(
 			fingerMath(node.remoteNode.Id, i, cfg.KeySize),
 			&node.remoteNode,
 		)
@@ -48,7 +48,7 @@ func (node *Node) fixNextFinger(next int) int {
 		return next
 	}
 
-	finger := NewFingerEntry(nextHash, successorNode)
+	finger := newFingerEntry(nextHash, successorNode)
 	node.ftMtx.Lock()
 	node.fingerTable[next] = finger
 	node.ftMtx.Unlock()

@@ -1,6 +1,16 @@
 language: go
+
 go:
  - 1.7
  - tip
-install: go get
+
+before_install:
+  - go get github.com/golang/lint/golint
+
+install:
+  - go get -d ./... && go build ./...
+
 script: ./scripts/test.sh
+
+notifications:
+  email: false

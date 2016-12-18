@@ -1,13 +1,21 @@
 package gmaj
 
 import (
+	"io/ioutil"
+	"log"
 	"testing"
 	"time"
+
+	"google.golang.org/grpc/grpclog"
 
 	"github.com/r-medina/gmaj/gmajpb"
 )
 
-var testTimeout = 400 * time.Millisecond
+var testTimeout = 500 * time.Millisecond
+
+func init() {
+	grpclog.SetLogger(log.New(ioutil.Discard, "", 0))
+}
 
 // Generally useful testing helper functions. Creates three successive nodes
 // with ids 0 (node1), 10 (node2) and 20 (node3).
