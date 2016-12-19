@@ -166,14 +166,15 @@ func (node *Node) stabilize() {
 	// TODO(r-medina): figure out the funky mutex shit here
 
 	node.succMtx.RLock()
-	if node.Successor == nil {
+	_succ := node.Successor
+	if _succ == nil {
 		node.succMtx.RUnlock()
 		return
 	}
 	node.succMtx.RUnlock()
 
 	// TODO(r-medina): handle error
-	succ, err := GetPredecessorRPC(node.Successor, node.dialOpts...)
+	succ, err := GetPredecessorRPC(_succ, node.dialOpts...)
 	if succ == nil || err != nil {
 		return
 	}
@@ -188,7 +189,7 @@ func (node *Node) stabilize() {
 	}
 
 	// TODO(r-medina): handle error (necessary?)
-	NotifyRPC(node.Successor, &node.remoteNode, node.dialOpts...)
+	_ = NotifyRPC(node.Successor, &node.remoteNode, node.dialOpts...)
 
 	return
 }

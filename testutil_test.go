@@ -6,15 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/grpclog"
-
 	"github.com/r-medina/gmaj/gmajpb"
+
+	"google.golang.org/grpc/grpclog"
 )
 
-var testTimeout = 500 * time.Millisecond
+var testTimeout = 750 * time.Millisecond
 
 func init() {
 	grpclog.SetLogger(log.New(ioutil.Discard, "", 0))
+
 }
 
 // Generally useful testing helper functions. Creates three successive nodes
@@ -42,9 +43,4 @@ func createDefinedNode(t *testing.T, ring *gmajpb.RemoteNode, id []byte) *Node {
 	}
 
 	return node
-}
-
-// Helper for between tests.
-func create3Points(x, a, b byte) ([]byte, []byte, []byte) {
-	return []byte{x}, []byte{a}, []byte{b}
 }
