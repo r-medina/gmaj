@@ -35,7 +35,7 @@ func Get(node *Node, key string) (string, error) {
 
 	// Retry on error because it might be due to temporary unavailability
 	// (e.g. write happened while transferring nodes).
-	value, err := GetRPC(remoteNode, key)
+	value, err := node.GetRPC(remoteNode, key)
 	if err != nil {
 		<-time.After(cfg.RetryInterval)
 		remoteNode, err = node.locate(key)
@@ -43,7 +43,7 @@ func Get(node *Node, key string) (string, error) {
 			return "", err
 		}
 
-		return GetRPC(remoteNode, key)
+		return node.GetRPC(remoteNode, key)
 	}
 
 	return value, nil
@@ -61,12 +61,12 @@ func Put(node *Node, key string, value string) error {
 		return err
 	}
 
-	return PutRPC(remoteNode, key, value)
+	return node.PutRPC(remoteNode, key, value)
 }
 
 // locate helps find the appropriate node in the ring.
 func (node *Node) locate(key string) (*gmajpb.RemoteNode, error) {
-	return FindSuccessorRPC(&node.remoteNode, HashKey(key))
+	return node.FindSuccessorRPC(&node.remoteNode, HashKey(key))
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys
@@ -78,12 +78,12 @@ func (node *Node) obtainNewKeys() error {
 	// TODO(asubiotto): Test the case where there are two nodes floating around
 	// that need keys.
 	// Assume new predecessor has been set.
-	prevPredecessor, err := GetPredecessorRPC(node.Successor)
+	prevPredecessor, err := node.GetPredecessorRPC(node.Successor)
 	if err != nil {
 		return err
 	}
 
-	return TransferKeysRPC(
+	return node.TransferKeysRPC(
 		node.Successor,
 		node.remoteNode.Id,
 		prevPredecessor,
@@ -95,6 +95,7 @@ func (node *Node) obtainNewKeys() error {
 //
 
 func (node *Node) get(key *gmajpb.Key) (string, error) {
+
 	if node.dataStore == nil {
 		return "", errNoDatastore
 	}
@@ -149,8 +150,7 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferMsg) error {
 		if BetweenRightIncl(hashedKey, tmsg.FromID, toNode.Id) {
 			// Only put if node is not ourselves.
 			if toNode.Addr != node.remoteNode.Addr {
-				err := PutRPC(toNode, key, node.dataStore[key])
-				if err != nil {
+				if err := node.PutRPC(toNode, key, node.dataStore[key]); err != nil {
 					return err
 				}
 			}

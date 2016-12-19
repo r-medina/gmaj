@@ -35,6 +35,9 @@ type Node struct {
 	dialOpts []grpc.DialOption
 
 	log grpclog.Logger
+
+	clientConns map[string]*clientConn
+	connMtx     sync.RWMutex
 }
 
 var _ gmajpb.NodeServer = (*Node)(nil)
@@ -55,8 +58,9 @@ func NewDefinedNode(
 	}
 
 	node := &Node{
-		shutdownCh: make(chan struct{}),
-		dialOpts:   dialOpts,
+		shutdownCh:  make(chan struct{}),
+		dialOpts:    dialOpts,
+		clientConns: make(map[string]*clientConn),
 	}
 	node.grpcs = grpc.NewServer()
 	gmajpb.RegisterNodeServer(node.grpcs, node)
@@ -79,13 +83,13 @@ func NewDefinedNode(
 	var joinNode *gmajpb.RemoteNode
 	if parent != nil {
 		// Ask if our id exists on the ring.
-		remoteNode, err := FindSuccessorRPC(parent, node.remoteNode.Id, dialOpts...)
+		remoteNode, err := node.FindSuccessorRPC(parent, node.remoteNode.Id)
 		if err != nil {
 			return nil, err
 		}
 
 		if IDsEqual(remoteNode.Id, node.remoteNode.Id) {
-			return nil, errors.New("Node with id already exists")
+			return nil, errors.New("node with id already exists")
 		}
 
 		joinNode = parent
@@ -149,7 +153,7 @@ func (node *Node) Addr() string {
 // join allows this node to join an existing ring that a remote node
 // is a part of (i.e., other).
 func (node *Node) join(other *gmajpb.RemoteNode) error {
-	succ, err := FindSuccessorRPC(other, node.remoteNode.Id, node.dialOpts...)
+	succ, err := node.FindSuccessorRPC(other, node.remoteNode.Id)
 	if err != nil {
 		return err
 	}
@@ -174,7 +178,7 @@ func (node *Node) stabilize() {
 	node.succMtx.RUnlock()
 
 	// TODO(r-medina): handle error
-	succ, err := GetPredecessorRPC(_succ, node.dialOpts...)
+	succ, err := node.GetPredecessorRPC(_succ)
 	if succ == nil || err != nil {
 		return
 	}
@@ -189,7 +193,7 @@ func (node *Node) stabilize() {
 	}
 
 	// TODO(r-medina): handle error (necessary?)
-	_ = NotifyRPC(node.Successor, &node.remoteNode, node.dialOpts...)
+	_ = node.NotifyRPC(node.Successor, &node.remoteNode)
 
 	return
 }
@@ -236,7 +240,7 @@ func (node *Node) findSuccessor(id []byte) (*gmajpb.RemoteNode, error) {
 		return &node.remoteNode, nil
 	}
 
-	succ, err := GetSuccessorRPC(pred, node.dialOpts...)
+	succ, err := node.GetSuccessorRPC(pred)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +269,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.RemoteNode, error) {
 	}
 
 	// TODO(asubiotto): Handle error?
-	succ, _ = GetSuccessorRPC(pred, node.dialOpts...)
+	succ, _ = node.GetSuccessorRPC(pred)
 
 	if succ == nil || succ.Addr == "" {
 		return pred, nil
@@ -273,7 +277,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.RemoteNode, error) {
 
 	for !BetweenRightIncl(id, pred.Id, succ.Id) {
 		var err error
-		pred, err = ClosestPrecedingFingerRPC(succ, id, node.dialOpts...)
+		pred, err = node.ClosestPrecedingFingerRPC(succ, id)
 		if err != nil {
 			return nil, err
 		}
@@ -282,7 +286,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.RemoteNode, error) {
 			return &node.remoteNode, nil
 		}
 
-		succ, err = GetSuccessorRPC(pred, node.dialOpts...)
+		succ, err = node.GetSuccessorRPC(pred)
 		if err != nil {
 			return nil, err
 		}
@@ -327,19 +331,23 @@ func (node *Node) Shutdown() {
 	node.succMtx.RLock()
 	if node.remoteNode.Addr != node.Successor.Addr {
 		node.predMtx.Lock()
-		node.transferKeys(&gmajpb.TransferMsg{FromID: node.Predecessor.Id, ToNode: node.Successor})
-		SetPredecessorRPC(node.Successor, node.Predecessor, node.dialOpts...)
-		SetSuccessorRPC(node.Predecessor, node.Successor, node.dialOpts...)
+		_ = node.transferKeys(&gmajpb.TransferMsg{
+			FromID: node.Predecessor.Id,
+			ToNode: node.Successor,
+		})
+		_ = node.SetPredecessorRPC(node.Successor, node.Predecessor)
+		_ = node.SetSuccessorRPC(node.Predecessor, node.Successor)
 		node.predMtx.Unlock()
 	}
 	node.succMtx.RUnlock()
 
-	connMtx.Lock()
-	for _, cc := range clientConns {
+	node.connMtx.Lock()
+	for _, cc := range node.clientConns {
 		cc.conn.Close()
 	}
-	clientConns = make(map[string]*clientConn)
-	connMtx.Unlock()
+	// TODO: check if can be set to nil
+	node.clientConns = make(map[string]*clientConn)
+	node.connMtx.Unlock()
 	node.grpcs.Stop()
 
 	<-time.After(cfg.StabilizeInterval)
