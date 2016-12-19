@@ -14,8 +14,8 @@ import (
 //
 
 var (
-	connMap = make(map[string]*clientConn)
-	connMtx = sync.RWMutex{}
+	clientConns = make(map[string]*clientConn)
+	connMtx     = sync.RWMutex{}
 )
 
 type clientConn struct {
@@ -171,7 +171,7 @@ func getNodeClient(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) (
 	// Dial the server if we don't already have a connection to it
 	remoteNodeAddr := remoteNode.Addr
 	connMtx.RLock()
-	cc, ok := connMap[remoteNodeAddr]
+	cc, ok := clientConns[remoteNodeAddr]
 	connMtx.RUnlock()
 	if ok {
 		return cc.client, nil
@@ -189,7 +189,7 @@ func getNodeClient(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) (
 	client := gmajpb.NewNodeClient(conn)
 	cc = &clientConn{client, conn}
 	connMtx.Lock()
-	connMap[remoteNodeAddr] = cc
+	clientConns[remoteNodeAddr] = cc
 	connMtx.Unlock()
 
 	return client, nil

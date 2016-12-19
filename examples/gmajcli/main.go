@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/r-medina/gmaj"
+	"github.com/r-medina/gmaj/gmajpb"
 )
 
 const prompt = "quit|node|table|addr|data|get|put > "
@@ -43,15 +44,16 @@ func main() {
 
 	flag.Parse()
 
-	var parent *gmaj.RemoteNode
+	var parent *gmajpb.RemoteNode
 	if *addrPtr == "" {
 		parent = nil
 	} else {
-		parent = new(gmaj.RemoteNode)
 		val := big.NewInt(0)
 		val.SetString(*idPtr, 10)
-		parent.Id = val.Bytes()
-		parent.Addr = *addrPtr
+		parent = &gmajpb.RemoteNode{
+			Id:   val.Bytes(),
+			Addr: *addrPtr,
+		}
 		fmt.Printf(
 			"Attach this node to id:%v, addr:%v\n",
 			gmaj.IDToString(parent.Id), parent.Addr,
