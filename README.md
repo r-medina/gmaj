@@ -1,3 +1,6 @@
+[![build status](https://travis-ci.org/r-medina/gmaj.svg?branch=master)](https://travis-ci.org/r-medina/gmaj)
+[![GoDoc](https://godoc.org/github.com/r-medina/gmaj?status.svg)](https://godoc.org/github.com/r-medina/gmaj)
+
 # GMaj
 Golang implementation of [Chord DHT](http://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf)
 
