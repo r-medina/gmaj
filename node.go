@@ -167,8 +167,6 @@ func (node *Node) join(other *gmajpb.RemoteNode) error {
 // stabilize attempts to stabilize a node.
 // This is an implementation of the psuedocode from figure 7 of chord paper.
 func (node *Node) stabilize() {
-	// TODO(r-medina): figure out the funky mutex shit here
-
 	node.succMtx.RLock()
 	_succ := node.Successor
 	if _succ == nil {
@@ -345,8 +343,7 @@ func (node *Node) Shutdown() {
 	for _, cc := range node.clientConns {
 		cc.conn.Close()
 	}
-	// TODO: check if can be set to nil
-	node.clientConns = make(map[string]*clientConn)
+	node.clientConns = nil
 	node.connMtx.Unlock()
 	node.grpcs.Stop()
 
