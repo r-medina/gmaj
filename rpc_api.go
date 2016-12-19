@@ -1,7 +1,7 @@
 package gmaj
 
 import (
-	"sync"
+	"errors"
 
 	"github.com/r-medina/gmaj/gmajpb"
 
@@ -13,11 +13,6 @@ import (
 // RPC connection map cache
 //
 
-var (
-	clientConns = make(map[string]*clientConn)
-	connMtx     = sync.RWMutex{}
-)
-
 type clientConn struct {
 	client gmajpb.NodeClient
 	conn   *grpc.ClientConn
@@ -28,8 +23,8 @@ type clientConn struct {
 //
 
 // GetPredecessorRPC gets the predecessor ID of a remote node.
-func GetPredecessorRPC(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) (*gmajpb.RemoteNode, error) {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.RemoteNode, error) {
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +33,8 @@ func GetPredecessorRPC(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOptio
 }
 
 // GetSuccessorRPC the successor ID of a remote node.
-func GetSuccessorRPC(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) (*gmajpb.RemoteNode, error) {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.RemoteNode, error) {
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -48,53 +43,44 @@ func GetSuccessorRPC(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption)
 }
 
 // SetPredecessorRPC noties a remote node that we believe we are its predecessor.
-func SetPredecessorRPC(remoteNode, newPred *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) error {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.RemoteNode) error {
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	if _, err = client.SetPredecessor(context.Background(), newPred); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = client.SetPredecessor(context.Background(), newPred)
+	return err
 }
 
 // SetSuccessorRPC sets the successor ID of a remote node.
-func SetSuccessorRPC(remoteNode, newSucc *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) error {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.RemoteNode) error {
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	if _, err = client.SetSuccessor(context.Background(), newSucc); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = client.SetSuccessor(context.Background(), newSucc)
+	return err
 }
 
 // NotifyRPC notifies a remote node that pred is its predecessor.
-func NotifyRPC(remoteNode, pred *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) error {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.RemoteNode) error {
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	if _, err = client.Notify(context.Background(), pred); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = client.Notify(context.Background(), pred)
+	return err
 }
 
 // ClosestPrecedingFingerRPC finds the closest preceding finger from a remote
 // node for an ID.
-func ClosestPrecedingFingerRPC(
-	remoteNode *gmajpb.RemoteNode, id []byte, dialOpts ...grpc.DialOption,
+func (node *Node) ClosestPrecedingFingerRPC(
+	remoteNode *gmajpb.RemoteNode, id []byte,
 ) (*gmajpb.RemoteNode, error) {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -103,10 +89,10 @@ func ClosestPrecedingFingerRPC(
 }
 
 // FindSuccessorRPC finds the successor node of a given ID in the entire ring.
-func FindSuccessorRPC(
-	remoteNode *gmajpb.RemoteNode, id []byte, dialOpts ...grpc.DialOption,
+func (node *Node) FindSuccessorRPC(
+	remoteNode *gmajpb.RemoteNode, id []byte,
 ) (*gmajpb.RemoteNode, error) {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -119,8 +105,8 @@ func FindSuccessorRPC(
 //
 
 // GetRPC gets a value from a remote node's datastore for a given key.
-func GetRPC(remoteNode *gmajpb.RemoteNode, key string, dialOpts ...grpc.DialOption) (string, error) {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+func (node *Node) GetRPC(remoteNode *gmajpb.RemoteNode, key string) (string, error) {
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return "", err
 	}
@@ -134,45 +120,40 @@ func GetRPC(remoteNode *gmajpb.RemoteNode, key string, dialOpts ...grpc.DialOpti
 }
 
 // PutRPC puts a key/value into a datastore on a remote node.
-func PutRPC(remoteNode *gmajpb.RemoteNode, key string, val string, dialOpts ...grpc.DialOption) error {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+func (node *Node) PutRPC(remoteNode *gmajpb.RemoteNode, key string, val string) error {
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	if _, err := client.Put(context.Background(), &gmajpb.KeyVal{Key: key, Val: val}); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = client.Put(context.Background(), &gmajpb.KeyVal{Key: key, Val: val})
+	return err
 }
 
 // TransferKeysRPC informs a successor node that we should now take care of IDs
 // between (node.Id : predId]. This should trigger the successor node to
 // transfer the relevant keys back to node
-func TransferKeysRPC(
-	remoteNode *gmajpb.RemoteNode, fromID []byte, toNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption,
+func (node *Node) TransferKeysRPC(
+	remoteNode *gmajpb.RemoteNode, fromID []byte, toNode *gmajpb.RemoteNode,
 ) error {
-	client, err := getNodeClient(remoteNode, dialOpts...)
+	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
 	_, err = client.TransferKeys(context.Background(), &gmajpb.TransferMsg{FromID: fromID, ToNode: toNode})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // getNodeClient is a helper function to make a call to a remote node.
-func getNodeClient(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) (gmajpb.NodeClient, error) {
+func (node *Node) getNodeClient(
+	remoteNode *gmajpb.RemoteNode,
+) (gmajpb.NodeClient, error) {
 	// Dial the server if we don't already have a connection to it
 	remoteNodeAddr := remoteNode.Addr
-	connMtx.RLock()
-	cc, ok := clientConns[remoteNodeAddr]
-	connMtx.RUnlock()
+	node.connMtx.RLock()
+	cc, ok := node.clientConns[remoteNodeAddr]
+	node.connMtx.RUnlock()
 	if ok {
 		return cc.client, nil
 	}
@@ -180,7 +161,7 @@ func getNodeClient(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) (
 	conn, err := grpc.Dial(
 		remoteNodeAddr,
 		// only way to do per-node credentials I can think of...
-		append(cfg.DialOptions, dialOpts...)...,
+		append(cfg.DialOptions, node.dialOpts...)...,
 	)
 	if err != nil {
 		return nil, err
@@ -188,9 +169,13 @@ func getNodeClient(remoteNode *gmajpb.RemoteNode, dialOpts ...grpc.DialOption) (
 
 	client := gmajpb.NewNodeClient(conn)
 	cc = &clientConn{client, conn}
-	connMtx.Lock()
-	clientConns[remoteNodeAddr] = cc
-	connMtx.Unlock()
+	node.connMtx.Lock()
+	if node.clientConns == nil {
+		node.connMtx.Unlock()
+		return nil, errors.New("must instantiate node before using")
+	}
+	node.clientConns[remoteNodeAddr] = cc
+	node.connMtx.Unlock()
 
 	return client, nil
 }
