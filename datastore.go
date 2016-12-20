@@ -142,17 +142,14 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferMsg) error {
 	defer node.dsMtx.Unlock()
 
 	toDelete := []string{}
-	for key := range node.dataStore {
+	for key, val := range node.dataStore {
 		hashedKey := HashKey(key)
 
 		// Check that the hashed_key lies in the correct range before putting
 		// the value in our predecessor.
 		if BetweenRightIncl(hashedKey, tmsg.FromID, toNode.Id) {
-			// Only put if node is not ourselves.
-			if toNode.Addr != node.remoteNode.Addr {
-				if err := node.PutRPC(toNode, key, node.dataStore[key]); err != nil {
-					return err
-				}
+			if err := node.PutRPC(toNode, key, val); err != nil {
+				return err
 			}
 
 			toDelete = append(toDelete, key)
