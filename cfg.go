@@ -1,17 +1,23 @@
 package gmaj
 
 import (
+	"errors"
 	"log"
 	"math/big"
+	"sync"
 
 	"github.com/r-medina/gmaj/gmajcfg"
 )
+
+var errSetConfig = errors.New("cannot set configuration more than once")
 
 // the configuration for whole package
 var cfg gmajcfg.Config
 
 // the largest possible ID value
 var max *big.Int
+
+var cfgOnce sync.Once
 
 func init() {
 	if err := SetConfig(gmajcfg.DefaultConfig); err != nil {
@@ -30,13 +36,23 @@ func init() {
 	}()
 }
 
-// SetConfig sets the configuration for the whole package.
+// SetConfig sets the configuration for the whole package. Should only be called once
 func SetConfig(config *gmajcfg.Config) error {
-	if err := config.Validate(); err != nil {
+	var called bool
+	var err error
+	cfgOnce.Do(func() {
+		defer func() { called = true }()
+
+		if err = config.Validate(); err != nil {
+			return
+		}
+
+		cfg = *config
+	})
+
+	if called {
 		return err
 	}
 
-	cfg = *config
-
-	return nil
+	return errSetConfig
 }

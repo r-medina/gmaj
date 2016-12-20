@@ -66,7 +66,7 @@ func TestFingerMath(t *testing.T) {
 	config := *gmajcfg.DefaultConfig
 	config.KeySize = 8
 	config.IDLength = 1
-	if err := SetConfig(&config); err != nil {
+	if err := SetConfig(&config); err != nil && err != errSetConfig {
 		t.Fatalf("unexpected error setting config: %v", err)
 	}
 	defer SetConfig(gmajcfg.DefaultConfig)
