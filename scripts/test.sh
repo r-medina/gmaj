@@ -32,11 +32,16 @@ golint
 
 info "running tests..."
 go test -v ./...
-sleep 2
+info "done running tests"
+sleep 3
 
 info "running tests with race flag..."
 go test -v -race ./...
-sleep 3
+info "done running tests with race flag"
+sleep 5
 
 info "running tests with cover flag..."
+set +e
 go test -v -cover ./...
+info "done tests with cover flag"
+set -e

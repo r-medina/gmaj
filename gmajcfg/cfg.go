@@ -45,11 +45,10 @@ var DefaultConfig = &Config{
 	KeySize:               dfltKeySize,
 	IDLength:              dfltKeySize / 8, // key length bytes
 	FixNextFingerInterval: 25 * time.Millisecond,
-	StabilizeInterval:     75 * time.Millisecond,
-	RetryInterval:         150 * time.Millisecond,
+	StabilizeInterval:     50 * time.Millisecond,
+	RetryInterval:         75 * time.Millisecond,
 	DialOptions: []grpc.DialOption{
 		grpc.WithInsecure(), // TODO(ricky): find a better way to use this for testing
-		grpc.WithBlock(),
 		grpc.WithTimeout(time.Second),
 	},
 }

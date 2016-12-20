@@ -20,12 +20,14 @@ func TestInitFingerTable(t *testing.T) {
 	if size := len(node.fingerTable); size != cfg.KeySize {
 		t.Fatalf("Expected finger table length %v, got %v.", cfg.KeySize, size)
 	}
-
+	node.ftMtx.RLock()
 	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.ID(), []byte{1})) {
+		node.ftMtx.RUnlock()
 		t.Fatalf("First finger entry start is wrong. got %v, expected %v",
 			node.fingerTable[0].StartID,
 			AddIDs(node.ID(), []byte{1}))
 	}
+	node.ftMtx.RUnlock()
 
 	if !reflect.DeepEqual(*node.fingerTable[0].RemoteNode, node.remoteNode) {
 		t.Fatalf("Finger entry does not point to itself.")
