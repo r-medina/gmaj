@@ -265,15 +265,15 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
-	time.Sleep(time.Millisecond * 200)
+	<-time.After(testTimeout << 1)
 
-	Put(node1, "a", "1")
-	Put(node1, "b", "2")
-	Put(node1, "c", "3")
-	Put(node1, "d", "4")
-	Put(node2, "e", "5")
-	Put(node2, "f", "6")
-	Put(node3, "g", "7")
+	_ = Put(node1, "a", "1")
+	_ = Put(node1, "b", "2")
+	_ = Put(node1, "c", "3")
+	_ = Put(node1, "d", "4")
+	_ = Put(node2, "e", "5")
+	_ = Put(node2, "f", "6")
+	_ = Put(node3, "g", "7")
 
 	// stores all the data in chord
 	data := make(map[string]string)

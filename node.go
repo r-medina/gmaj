@@ -103,11 +103,14 @@ func NewDefinedNode(
 
 	// thread 2: kick off timer to stabilize periodically
 	go func() {
+		ticker := time.NewTicker(cfg.StabilizeInterval)
 		for {
 			select {
+			// case <-ticker.C:
 			case <-time.After(cfg.StabilizeInterval):
 				node.stabilize()
 			case <-node.shutdownCh:
+				ticker.Stop()
 				return
 			}
 		}
@@ -116,11 +119,14 @@ func NewDefinedNode(
 	// thread 3: kick off timer to fix finger table periodically
 	go func() {
 		next := 0
+		ticker := time.NewTicker(cfg.FixNextFingerInterval)
 		for {
 			select {
+			// case <-ticker.C:
 			case <-time.After(cfg.FixNextFingerInterval):
 				next = node.fixNextFinger(next)
 			case <-node.shutdownCh:
+				ticker.Stop()
 				return
 			}
 		}

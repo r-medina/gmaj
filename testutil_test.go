@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/grpclog"
 )
 
-var testTimeout = 750 * time.Millisecond
+var testTimeout = 350 * time.Millisecond
 
 func init() {
 	grpclog.SetLogger(log.New(ioutil.Discard, "", 0))
