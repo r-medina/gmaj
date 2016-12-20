@@ -128,7 +128,7 @@ func TestFindSuccessorSimple(t *testing.T) {
 func TestFindSuccessorMultipleNodes(t *testing.T) {
 	node1, node2, node3 := create3SuccessiveNodes(t)
 
-	<-time.After(testTimeout)
+	<-time.After(testTimeout << 1)
 
 	assertSuccessorID(t, 0, node1)
 	assertSuccessorID(t, 10, node2)
