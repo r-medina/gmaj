@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	emptyRemote = &gmajpb.RemoteNode{}
+	emptyRemote = &gmajpb.Node{}
 	mt          = &gmajpb.MT{}
 )
 
 // GetPredecessor gets the predecessor on the node.
-func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode, error) {
+func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.Node, error) {
 	node.predMtx.RLock()
 	pred := node.Predecessor
 	node.predMtx.RUnlock()
@@ -27,7 +27,7 @@ func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNod
 }
 
 // GetSuccessor gets the successor on the node..
-func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode, error) {
+func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.Node, error) {
 	node.succMtx.RLock()
 	succ := node.Successor
 	node.succMtx.RUnlock()
@@ -41,7 +41,7 @@ func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode,
 
 // SetPredecessor sets the predecessor on the node.
 func (node *Node) SetPredecessor(
-	ctx context.Context, pred *gmajpb.RemoteNode,
+	ctx context.Context, pred *gmajpb.Node,
 ) (*gmajpb.MT, error) {
 	node.predMtx.Lock()
 	node.Predecessor = pred
@@ -52,7 +52,7 @@ func (node *Node) SetPredecessor(
 
 // SetSuccessor sets the successor on the node.
 func (node *Node) SetSuccessor(
-	ctx context.Context, succ *gmajpb.RemoteNode,
+	ctx context.Context, succ *gmajpb.Node,
 ) (*gmajpb.MT, error) {
 	node.succMtx.Lock()
 	node.Successor = succ
@@ -63,7 +63,7 @@ func (node *Node) SetSuccessor(
 
 // Notify is called when remoteNode thinks it's our predecessor.
 func (node *Node) Notify(
-	ctx context.Context, remoteNode *gmajpb.RemoteNode,
+	ctx context.Context, remoteNode *gmajpb.Node,
 ) (*gmajpb.MT, error) {
 	if remoteNode == nil {
 		return mt, errors.New("remoteNode cannot be nil")
@@ -87,7 +87,7 @@ func (node *Node) Notify(
 // table based on the id.
 func (node *Node) ClosestPrecedingFinger(
 	ctx context.Context, id *gmajpb.ID,
-) (*gmajpb.RemoteNode, error) {
+) (*gmajpb.Node, error) {
 	remoteNode := node.closestPrecedingFinger(id.Id)
 	if remoteNode == nil {
 		return emptyRemote, errors.New("MT node closest preceding finger")
@@ -99,7 +99,7 @@ func (node *Node) ClosestPrecedingFinger(
 // FindSuccessor finds the successor, error if nil.
 func (node *Node) FindSuccessor(
 	ctx context.Context, id *gmajpb.ID,
-) (*gmajpb.RemoteNode, error) {
+) (*gmajpb.Node, error) {
 	succ, err := node.findSuccessor(id.Id)
 	if err != nil {
 		return emptyRemote, err

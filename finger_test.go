@@ -30,7 +30,7 @@ func TestInitFingerTable(t *testing.T) {
 	}
 	node.ftMtx.RUnlock()
 
-	if !reflect.DeepEqual(node.fingerTable[0].RemoteNode, node.RemoteNode) {
+	if !reflect.DeepEqual(node.fingerTable[0].RemoteNode, node.Node) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 }
@@ -38,7 +38,7 @@ func TestInitFingerTable(t *testing.T) {
 func TestFixNextFinger(t *testing.T) {
 	t.Parallel()
 
-	node1 := &Node{RemoteNode: new(gmajpb.RemoteNode)}
+	node1 := &Node{Node: new(gmajpb.Node)}
 	node1.Id = []byte{10}
 	node1.Addr = "localhost"
 	node1.initFingerTable()
@@ -53,7 +53,7 @@ func TestFixNextFinger(t *testing.T) {
 		t.Fatalf("First finger entry start is wrong.")
 	}
 
-	if !reflect.DeepEqual(node1.fingerTable[0].RemoteNode, node1.RemoteNode) {
+	if !reflect.DeepEqual(node1.fingerTable[0].RemoteNode, node1.Node) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 

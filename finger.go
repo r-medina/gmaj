@@ -12,12 +12,12 @@ type fingerTable []*fingerEntry
 
 // fingerEntry represents a single finger table entry
 type fingerEntry struct {
-	StartID    []byte             // ID hash of (n + 2^i) mod (2^m)
-	RemoteNode *gmajpb.RemoteNode // RemoteNode that Start points to
+	StartID    []byte       // ID hash of (n + 2^i) mod (2^m)
+	RemoteNode *gmajpb.Node // RemoteNode that Start points to
 }
 
 // newFingerEntry returns an allocated new finger entry with the attributes set
-func newFingerEntry(startID []byte, remoteNode *gmajpb.RemoteNode) *fingerEntry {
+func newFingerEntry(startID []byte, remoteNode *gmajpb.Node) *fingerEntry {
 	return &fingerEntry{
 		StartID:    startID,
 		RemoteNode: remoteNode,
@@ -34,7 +34,7 @@ func (node *Node) initFingerTable() {
 	for i := range node.fingerTable {
 		node.fingerTable[i] = newFingerEntry(
 			fingerMath(node.Id, i, cfg.KeySize),
-			node.RemoteNode,
+			node.Node,
 		)
 	}
 }

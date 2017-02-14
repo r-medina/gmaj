@@ -19,7 +19,7 @@ func TestGetNilNode(t *testing.T) {
 func TestGetNoDataStore(t *testing.T) {
 	t.Parallel()
 
-	node := &Node{RemoteNode: new(gmajpb.RemoteNode)}
+	node := &Node{Node: new(gmajpb.Node)}
 	_, err := node.get(new(gmajpb.Key))
 	if err == nil {
 		t.Fatal("Unexpected success getting value from nil datastore")
@@ -76,7 +76,7 @@ func TestPutNilNode(t *testing.T) {
 func TestPutNoDataStore(t *testing.T) {
 	t.Parallel()
 
-	node := &Node{RemoteNode: new(gmajpb.RemoteNode)}
+	node := &Node{Node: new(gmajpb.Node)}
 	err := Put(node, "", "")
 	if err == nil {
 		t.Fatal("Unexpected success putting value in nil datastore")
@@ -150,7 +150,7 @@ func TestTransferKeys(t *testing.T) {
 	// Make node that should get the key transferred to it.
 	hashedKey = HashKey(key)
 	hashedKey[0]++
-	node2, err := NewDefinedNode(node1.RemoteNode, hashedKey)
+	node2, err := NewDefinedNode(node1.Node, hashedKey)
 	if err != nil {
 		t.Fatalf("unexpected error making new node: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestTransferKeysAvailability(t *testing.T) {
 	// Make node that should get the key transferred to it.
 	hashedKey = HashKey(key)
 	hashedKey[0]++
-	node2, err := NewDefinedNode(node1.RemoteNode, hashedKey)
+	node2, err := NewDefinedNode(node1.Node, hashedKey)
 	if err != nil {
 		t.Fatalf("unexpected error making new node: %v", err)
 	}
@@ -242,7 +242,7 @@ func TestKeyTransferAfterShutdownSimple(t *testing.T) {
 		data[k] = v
 	}
 
-	node2 := createSimpleNode(t, node1.RemoteNode)
+	node2 := createSimpleNode(t, node1.Node)
 	<-time.After(testTimeout)
 
 	// makes sure that all the data is still available somewhere
@@ -326,7 +326,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 	}
 
 	definedID := make([]byte, cfg.IDLength)
-	node4 := createDefinedNode(t, node3.RemoteNode, definedID)
+	node4 := createDefinedNode(t, node3.Node, definedID)
 
 	<-time.After(testTimeout)
 

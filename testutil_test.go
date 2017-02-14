@@ -25,18 +25,18 @@ func create3SuccessiveNodes(t *testing.T) (*Node, *Node, *Node) {
 	node1 := createDefinedNode(t, nil, definedID)
 	definedID = make([]byte, cfg.IDLength)
 	definedID[0] = 55
-	node2 := createDefinedNode(t, node1.RemoteNode, definedID)
+	node2 := createDefinedNode(t, node1.Node, definedID)
 	definedID = make([]byte, cfg.IDLength)
 	definedID[0] = 0xaa
-	node3 := createDefinedNode(t, node1.RemoteNode, definedID)
+	node3 := createDefinedNode(t, node1.Node, definedID)
 	return node1, node2, node3
 }
 
-func createSimpleNode(t *testing.T, ring *gmajpb.RemoteNode) *Node {
+func createSimpleNode(t *testing.T, ring *gmajpb.Node) *Node {
 	return createDefinedNode(t, ring, nil)
 }
 
-func createDefinedNode(t *testing.T, ring *gmajpb.RemoteNode, id []byte) *Node {
+func createDefinedNode(t *testing.T, ring *gmajpb.Node, id []byte) *Node {
 	node, err := NewDefinedNode(ring, id)
 	if err != nil {
 		t.Fatalf("Unable to create node, received error:%v", err)

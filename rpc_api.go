@@ -23,7 +23,7 @@ type clientConn struct {
 //
 
 // GetPredecessorRPC gets the predecessor ID of a remote node.
-func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.RemoteNode, error) {
+func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.Remo
 }
 
 // GetSuccessorRPC the successor ID of a remote node.
-func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.RemoteNode, error) {
+func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.Remote
 }
 
 // SetPredecessorRPC noties a remote node that we believe we are its predecessor.
-func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.RemoteNode) error {
+func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.Node) error {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.RemoteNode) erro
 }
 
 // SetSuccessorRPC sets the successor ID of a remote node.
-func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.RemoteNode) error {
+func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.Node) error {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.RemoteNode) error 
 }
 
 // NotifyRPC notifies a remote node that pred is its predecessor.
-func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.RemoteNode) error {
+func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.Node) error {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
@@ -78,8 +78,8 @@ func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.RemoteNode) error {
 // ClosestPrecedingFingerRPC finds the closest preceding finger from a remote
 // node for an ID.
 func (node *Node) ClosestPrecedingFingerRPC(
-	remoteNode *gmajpb.RemoteNode, id []byte,
-) (*gmajpb.RemoteNode, error) {
+	remoteNode *gmajpb.Node, id []byte,
+) (*gmajpb.Node, error) {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
@@ -90,8 +90,8 @@ func (node *Node) ClosestPrecedingFingerRPC(
 
 // FindSuccessorRPC finds the successor node of a given ID in the entire ring.
 func (node *Node) FindSuccessorRPC(
-	remoteNode *gmajpb.RemoteNode, id []byte,
-) (*gmajpb.RemoteNode, error) {
+	remoteNode *gmajpb.Node, id []byte,
+) (*gmajpb.Node, error) {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (node *Node) FindSuccessorRPC(
 //
 
 // GetRPC gets a value from a remote node's datastore for a given key.
-func (node *Node) GetRPC(remoteNode *gmajpb.RemoteNode, key string) (string, error) {
+func (node *Node) GetRPC(remoteNode *gmajpb.Node, key string) (string, error) {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return "", err
@@ -120,7 +120,7 @@ func (node *Node) GetRPC(remoteNode *gmajpb.RemoteNode, key string) (string, err
 }
 
 // PutRPC puts a key/value into a datastore on a remote node.
-func (node *Node) PutRPC(remoteNode *gmajpb.RemoteNode, key string, val string) error {
+func (node *Node) PutRPC(remoteNode *gmajpb.Node, key string, val string) error {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func (node *Node) PutRPC(remoteNode *gmajpb.RemoteNode, key string, val string) 
 // between (node.Id : predId]. This should trigger the successor node to
 // transfer the relevant keys back to node
 func (node *Node) TransferKeysRPC(
-	remoteNode *gmajpb.RemoteNode, fromID []byte, toNode *gmajpb.RemoteNode,
+	remoteNode *gmajpb.Node, fromID []byte, toNode *gmajpb.Node,
 ) error {
 	client, err := node.getNodeClient(remoteNode)
 	if err != nil {
@@ -147,7 +147,7 @@ func (node *Node) TransferKeysRPC(
 
 // getNodeClient is a helper function to make a call to a remote node.
 func (node *Node) getNodeClient(
-	remoteNode *gmajpb.RemoteNode,
+	remoteNode *gmajpb.Node,
 ) (gmajpb.NodeClient, error) {
 	// Dial the server if we don't already have a connection to it
 	remoteNodeAddr := remoteNode.Addr

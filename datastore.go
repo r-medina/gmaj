@@ -65,8 +65,8 @@ func Put(node *Node, key string, value string) error {
 }
 
 // locate helps find the appropriate node in the ring.
-func (node *Node) locate(key string) (*gmajpb.RemoteNode, error) {
-	return node.FindSuccessorRPC(node.RemoteNode, HashKey(key))
+func (node *Node) locate(key string) (*gmajpb.Node, error) {
+	return node.FindSuccessorRPC(node.Node, HashKey(key))
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys

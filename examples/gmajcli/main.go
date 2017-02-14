@@ -27,7 +27,7 @@ func nodeToString(node *gmaj.Node) string {
 	}
 
 	return fmt.Sprintf(
-		"Node-%v: {succ:%v, pred:%v}", gmaj.IDToString(node.ID()), succ, pred,
+		"Node-%v: {succ:%v, pred:%v}", gmaj.IDToString(node.Id), succ, pred,
 	)
 }
 
@@ -44,13 +44,13 @@ func main() {
 
 	flag.Parse()
 
-	var parent *gmajpb.RemoteNode
+	var parent *gmajpb.Node
 	if *addrPtr == "" {
 		parent = nil
 	} else {
 		val := big.NewInt(0)
 		val.SetString(*idPtr, 10)
-		parent = &gmajpb.RemoteNode{
+		parent = &gmajpb.Node{
 			Id:   val.Bytes(),
 			Addr: *addrPtr,
 		}
@@ -71,7 +71,7 @@ func main() {
 
 		fmt.Printf(
 			"Created -id %v -addr %v\n",
-			gmaj.IDToString(nodes[i].ID()), nodes[i].Addr(),
+			gmaj.IDToString(nodes[i].Id), nodes[i].Addr,
 		)
 	}
 

@@ -6,10 +6,10 @@ syntax = "proto3";
 
 package gmajpb;
 
-// Node is the service for inter-node communication.
+// Chord is the service for inter-node communication.
 // This has all the RPC functions needed to maintain
 // a Chord cluster.
-service Node {
+service Chord {
     rpc GetPredecessor(MT) returns (RemoteNode);
     rpc GetSuccessor(MT) returns (RemoteNode);
     rpc SetPredecessor(RemoteNode) returns (MT);
@@ -38,7 +38,7 @@ service MembershipServer {
     rpc GetNode(MT) returns (RemoteNode);
 }
 
-message RemoteNode {
+message Node {
     bytes id = 1;
     string addr = 2;
 }
