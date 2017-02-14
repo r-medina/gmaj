@@ -33,8 +33,8 @@ func (node *Node) initFingerTable() {
 	node.fingerTable = make([]*fingerEntry, cfg.KeySize)
 	for i := range node.fingerTable {
 		node.fingerTable[i] = newFingerEntry(
-			fingerMath(node.remoteNode.Id, i, cfg.KeySize),
-			&node.remoteNode,
+			fingerMath(node.Id, i, cfg.KeySize),
+			node.RemoteNode,
 		)
 	}
 }
@@ -42,7 +42,7 @@ func (node *Node) initFingerTable() {
 // fixNextFinger runs periodically (in a seperate go routine)
 // to fix entries in our finger table.
 func (node *Node) fixNextFinger(next int) int {
-	nextHash := fingerMath(node.remoteNode.Id, next, cfg.KeySize)
+	nextHash := fingerMath(node.Id, next, cfg.KeySize)
 	successorNode, err := node.findSuccessor(nextHash)
 	if err != nil {
 		return next
@@ -74,7 +74,7 @@ func fingerMath(n []byte, i int, m int) []byte {
 func FingerTableToString(node *Node) string {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("[%v] FingerTable:", IDToString(node.remoteNode.Id)))
+	buf.WriteString(fmt.Sprintf("[%v] FingerTable:", IDToString(node.Id)))
 
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()

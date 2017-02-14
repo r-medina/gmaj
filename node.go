@@ -14,7 +14,7 @@ import (
 
 // Node represents a node in the Chord mesh.
 type Node struct {
-	remoteNode gmajpb.RemoteNode
+	*gmajpb.RemoteNode
 
 	grpcs *grpc.Server
 
@@ -58,6 +58,7 @@ func NewDefinedNode(
 	}
 
 	node := &Node{
+		RemoteNode:  new(gmajpb.RemoteNode),
 		shutdownCh:  make(chan struct{}),
 		dialOpts:    dialOpts,
 		clientConns: make(map[string]*clientConn),
@@ -66,11 +67,11 @@ func NewDefinedNode(
 	gmajpb.RegisterNodeServer(node.grpcs, node)
 
 	if id != nil {
-		node.remoteNode.Id = id
+		node.Id = id
 	} else {
-		node.remoteNode.Id = HashKey(lis.Addr().String())
+		node.Id = HashKey(lis.Addr().String())
 	}
-	node.remoteNode.Addr = lis.Addr().String()
+	node.Addr = lis.Addr().String()
 	node.dataStore = make(map[string]string)
 
 	// Populate finger table
@@ -83,18 +84,18 @@ func NewDefinedNode(
 	var joinNode *gmajpb.RemoteNode
 	if parent != nil {
 		// Ask if our id exists on the ring.
-		remoteNode, err := node.FindSuccessorRPC(parent, node.remoteNode.Id)
+		remoteNode, err := node.FindSuccessorRPC(parent, node.Id)
 		if err != nil {
 			return nil, err
 		}
 
-		if IDsEqual(remoteNode.Id, node.remoteNode.Id) {
+		if IDsEqual(remoteNode.Id, node.Id) {
 			return nil, errors.New("node with id already exists")
 		}
 
 		joinNode = parent
 	} else {
-		joinNode = &node.remoteNode
+		joinNode = node.RemoteNode
 	}
 
 	if err = node.join(joinNode); err != nil {
@@ -131,29 +132,10 @@ func NewDefinedNode(
 	return node, nil
 }
 
-// RemoteNode returns a pointer to the gmajpb.RemoteNode of the node.
-func (node *Node) RemoteNode() *gmajpb.RemoteNode {
-	remoteNode := node.remoteNode
-	return &remoteNode
-}
-
-// ID returns a copy of the node's ID
-func (node *Node) ID() []byte {
-	out := make([]byte, len(node.remoteNode.Id))
-	copy(out, node.remoteNode.Id)
-
-	return out
-}
-
-// Addr returns the node's address.
-func (node *Node) Addr() string {
-	return node.remoteNode.Addr
-}
-
 // join allows this node to join an existing ring that a remote node
 // is a part of (i.e., other).
 func (node *Node) join(other *gmajpb.RemoteNode) error {
-	succ, err := node.FindSuccessorRPC(other, node.remoteNode.Id)
+	succ, err := node.FindSuccessorRPC(other, node.Id)
 	if err != nil {
 		return err
 	}
@@ -184,14 +166,14 @@ func (node *Node) stabilize() {
 	// If the predecessor of our successor is nil (succ), it means that our
 	// successor has not had the chance to update their predecessor pointer. We
 	// still want to notify them of our belief that we are its predecessor.
-	if succ.Id != nil && Between(succ.Id, node.remoteNode.Id, node.Successor.Id) {
+	if succ.Id != nil && Between(succ.Id, node.Id, node.Successor.Id) {
 		node.succMtx.Lock()
 		node.Successor = succ
 		node.succMtx.Unlock()
 	}
 
 	// TODO(r-medina): handle error (necessary?)
-	_ = node.NotifyRPC(node.Successor, &node.remoteNode)
+	_ = node.NotifyRPC(node.Successor, node.RemoteNode)
 
 	return
 }
@@ -206,7 +188,7 @@ func (node *Node) notify(remoteNode *gmajpb.RemoteNode) {
 	// circle) since we are guaranteed that each node's successor link is
 	// correct.
 	if !(node.Predecessor == nil ||
-		Between(remoteNode.Id, node.Predecessor.Id, node.remoteNode.Id)) {
+		Between(remoteNode.Id, node.Predecessor.Id, node.Id)) {
 		return
 	}
 
@@ -218,7 +200,7 @@ func (node *Node) notify(remoteNode *gmajpb.RemoteNode) {
 	// Update predecessor and transfer keys.
 	node.Predecessor = remoteNode
 
-	if Between(node.Predecessor.Id, prevID, node.remoteNode.Id) {
+	if Between(node.Predecessor.Id, prevID, node.Id) {
 		node.transferKeys(
 			&gmajpb.TransferMsg{FromID: prevID, ToNode: node.Predecessor},
 		)
@@ -235,7 +217,7 @@ func (node *Node) findSuccessor(id []byte) (*gmajpb.RemoteNode, error) {
 
 	// TODO(r-medina): make an error in the rpc stuff for empty responses?
 	if pred.Addr == "" {
-		return &node.remoteNode, nil
+		return node.RemoteNode, nil
 	}
 
 	succ, err := node.GetSuccessorRPC(pred)
@@ -244,7 +226,7 @@ func (node *Node) findSuccessor(id []byte) (*gmajpb.RemoteNode, error) {
 	}
 
 	if succ.Addr == "" {
-		return &node.remoteNode, nil
+		return node.RemoteNode, nil
 	}
 
 	return succ, nil
@@ -253,7 +235,7 @@ func (node *Node) findSuccessor(id []byte) (*gmajpb.RemoteNode, error) {
 // findPredecessor finds the node's predecessor. This implements psuedocode from
 // figure 4 of chord paper.
 func (node *Node) findPredecessor(id []byte) (*gmajpb.RemoteNode, error) {
-	pred := &node.remoteNode
+	pred := node.RemoteNode
 	node.succMtx.Lock()
 	succ := node.Successor
 	node.succMtx.Unlock()
@@ -281,7 +263,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.RemoteNode, error) {
 		}
 
 		if pred.Addr == "" {
-			return &node.remoteNode, nil
+			return node.RemoteNode, nil
 		}
 
 		succ, err = node.GetSuccessorRPC(pred)
@@ -290,7 +272,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.RemoteNode, error) {
 		}
 
 		if succ.Addr == "" {
-			return &node.remoteNode, nil
+			return node.RemoteNode, nil
 		}
 	}
 
@@ -311,12 +293,12 @@ func (node *Node) closestPrecedingFinger(id []byte) *gmajpb.RemoteNode {
 
 		// Check that the node we believe is the successor for
 		// (node + 2^i) mod 2^m also precedes id.
-		if Between(n.RemoteNode.Id, node.remoteNode.Id, id) {
+		if Between(n.RemoteNode.Id, node.Id, id) {
 			return n.RemoteNode
 		}
 	}
 
-	return &node.remoteNode
+	return node.RemoteNode
 }
 
 // Shutdown shuts down the Chord node (gracefully).
@@ -327,7 +309,7 @@ func (node *Node) Shutdown() {
 	// Do nothing if we are our own successor (i.e. we are the only node in the
 	// ring).
 	node.succMtx.RLock()
-	if node.remoteNode.Addr != node.Successor.Addr {
+	if node.Addr != node.Successor.Addr {
 		node.predMtx.Lock()
 		_ = node.transferKeys(&gmajpb.TransferMsg{
 			FromID: node.Predecessor.Id,

@@ -66,7 +66,7 @@ func Put(node *Node, key string, value string) error {
 
 // locate helps find the appropriate node in the ring.
 func (node *Node) locate(key string) (*gmajpb.RemoteNode, error) {
-	return node.FindSuccessorRPC(&node.remoteNode, HashKey(key))
+	return node.FindSuccessorRPC(node.RemoteNode, HashKey(key))
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys
@@ -85,7 +85,7 @@ func (node *Node) obtainNewKeys() error {
 
 	return node.TransferKeysRPC(
 		node.Successor,
-		node.remoteNode.Id,
+		node.Id,
 		prevPredecessor,
 	) // implicitly correct even when prevPredecessor.ID == nil
 }
@@ -134,7 +134,7 @@ func (node *Node) put(keyVal *gmajpb.KeyVal) error {
 
 func (node *Node) transferKeys(tmsg *gmajpb.TransferMsg) error {
 	toNode := tmsg.ToNode
-	if IDsEqual(toNode.Id, node.ID()) {
+	if IDsEqual(toNode.Id, node.Id) {
 		return nil
 	}
 
@@ -168,7 +168,7 @@ func PrintDataStore(node *Node) {
 	node.dsMtx.RLock()
 	fmt.Printf(
 		"Node-%v datastore: %v\n",
-		IDToString(node.remoteNode.Id), node.dataStore,
+		IDToString(node.Id), node.dataStore,
 	)
 	node.dsMtx.RUnlock()
 }

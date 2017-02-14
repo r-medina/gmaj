@@ -25,10 +25,10 @@ func create3SuccessiveNodes(t *testing.T) (*Node, *Node, *Node) {
 	node1 := createDefinedNode(t, nil, definedID)
 	definedID = make([]byte, cfg.IDLength)
 	definedID[0] = 55
-	node2 := createDefinedNode(t, node1.RemoteNode(), definedID)
+	node2 := createDefinedNode(t, node1.RemoteNode, definedID)
 	definedID = make([]byte, cfg.IDLength)
 	definedID[0] = 0xaa
-	node3 := createDefinedNode(t, node1.RemoteNode(), definedID)
+	node3 := createDefinedNode(t, node1.RemoteNode, definedID)
 	return node1, node2, node3
 }
 

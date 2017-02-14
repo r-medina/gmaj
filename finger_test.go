@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/r-medina/gmaj/gmajcfg"
+	"github.com/r-medina/gmaj/gmajpb"
 )
 
 func TestInitFingerTable(t *testing.T) {
@@ -21,15 +22,15 @@ func TestInitFingerTable(t *testing.T) {
 		t.Fatalf("Expected finger table length %v, got %v.", cfg.KeySize, size)
 	}
 	node.ftMtx.RLock()
-	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.ID(), []byte{1})) {
+	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.Id, []byte{1})) {
 		node.ftMtx.RUnlock()
 		t.Fatalf("First finger entry start is wrong. got %v, expected %v",
 			node.fingerTable[0].StartID,
-			AddIDs(node.ID(), []byte{1}))
+			AddIDs(node.Id, []byte{1}))
 	}
 	node.ftMtx.RUnlock()
 
-	if !reflect.DeepEqual(*node.fingerTable[0].RemoteNode, node.remoteNode) {
+	if !reflect.DeepEqual(node.fingerTable[0].RemoteNode, node.RemoteNode) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 }
@@ -37,9 +38,9 @@ func TestInitFingerTable(t *testing.T) {
 func TestFixNextFinger(t *testing.T) {
 	t.Parallel()
 
-	node1 := new(Node)
-	node1.remoteNode.Id = []byte{10}
-	node1.remoteNode.Addr = "localhost"
+	node1 := &Node{RemoteNode: new(gmajpb.RemoteNode)}
+	node1.Id = []byte{10}
+	node1.Addr = "localhost"
 	node1.initFingerTable()
 	next := 1
 	next = node1.fixNextFinger(next) // shouldn't do anything because no rpc
@@ -48,11 +49,11 @@ func TestFixNextFinger(t *testing.T) {
 		t.Fatalf("next should not have changed.")
 	}
 
-	if !bytes.Equal(node1.fingerTable[0].StartID, AddIDs(node1.ID(), []byte{1})) {
+	if !bytes.Equal(node1.fingerTable[0].StartID, AddIDs(node1.Id, []byte{1})) {
 		t.Fatalf("First finger entry start is wrong.")
 	}
 
-	if !reflect.DeepEqual(*node1.fingerTable[0].RemoteNode, node1.remoteNode) {
+	if !reflect.DeepEqual(node1.fingerTable[0].RemoteNode, node1.RemoteNode) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 
@@ -153,7 +154,7 @@ func TestStabilizedFingerTable(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		want := test.n2.ID()
+		want := test.n2.Id
 		test.n1.ftMtx.RLock()
 		got := test.n1.fingerTable[test.i].RemoteNode.Id
 		test.n1.ftMtx.RUnlock()
