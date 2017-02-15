@@ -152,15 +152,16 @@ func (node *Node) join(other *gmajpb.Node) error {
 // This is an implementation of the psuedocode from figure 7 of chord paper.
 func (node *Node) stabilize() {
 	node.succMtx.RLock()
-	succ := node.Successor
-	if succ == nil {
+	_succ := node.Successor
+	if _succ == nil {
 		node.succMtx.RUnlock()
 		return
 	}
 	node.succMtx.RUnlock()
 
-	succ, err := node.GetPredecessorRPC(succ)
+	succ, err := node.GetPredecessorRPC(_succ)
 	if succ == nil || err != nil {
+		// TODO: handle failed client
 		return
 	}
 

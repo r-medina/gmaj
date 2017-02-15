@@ -54,7 +54,6 @@ var DefaultConfig = &Config{
 	RetryInterval:         75 * time.Millisecond,
 	DialOptions: []grpc.DialOption{
 		grpc.WithInsecure(), // TODO(ricky): find a better way to use this for testing
-		grpc.WithTimeout(time.Second),
 	},
 	Log: log.New(os.Stderr, "gmaj: ", log.LstdFlags),
 }

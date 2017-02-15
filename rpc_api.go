@@ -152,15 +152,15 @@ func (node *Node) getChordClient(
 	remoteNode *gmajpb.Node,
 ) (gmajpb.ChordClient, error) {
 	// Dial the server if we don't already have a connection to it
-	remoteNodeAddr := remoteNode.Addr
+	addr := remoteNode.Addr
 	node.connMtx.RLock()
-	cc, ok := node.clientConns[remoteNodeAddr]
+	cc, ok := node.clientConns[addr]
 	node.connMtx.RUnlock()
 	if ok {
 		return cc.client, nil
 	}
 
-	conn, err := grpc.Dial(remoteNodeAddr, config.DialOptions...)
+	conn, err := dial(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -172,8 +172,17 @@ func (node *Node) getChordClient(
 		node.connMtx.Unlock()
 		return nil, errors.New("must instantiate node before using")
 	}
-	node.clientConns[remoteNodeAddr] = cc
+	node.clientConns[addr] = cc
 	node.connMtx.Unlock()
 
 	return client, nil
+}
+
+func dial(addr string) (*grpc.ClientConn, error) {
+	return grpc.Dial(addr, append(
+		config.DialOptions,
+		// grpc.WithBlock(),
+		// grpc.WithTimeout(1*time.Second),
+		// grpc.FailOnNonTempDialError(true),
+	)...)
 }
