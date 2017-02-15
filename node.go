@@ -9,7 +9,6 @@ import (
 	"github.com/r-medina/gmaj/gmajpb"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 )
 
 // Node represents a node in the Chord mesh.
@@ -33,8 +32,6 @@ type Node struct {
 	dsMtx     sync.RWMutex      // RWLock for datastore
 
 	dialOpts []grpc.DialOption
-
-	log grpclog.Logger
 
 	clientConns map[string]*clientConn
 	connMtx     sync.RWMutex
@@ -106,7 +103,7 @@ func NewDefinedNode(
 	go func() {
 		for {
 			select {
-			case <-time.After(cfg.StabilizeInterval):
+			case <-time.After(config.StabilizeInterval):
 				node.stabilize()
 			case <-node.shutdownCh:
 				return
@@ -119,7 +116,7 @@ func NewDefinedNode(
 		next := 0
 		for {
 			select {
-			case <-time.After(cfg.FixNextFingerInterval):
+			case <-time.After(config.FixNextFingerInterval):
 				next = node.fixNextFinger(next)
 			case <-node.shutdownCh:
 				return
@@ -127,7 +124,7 @@ func NewDefinedNode(
 		}
 	}()
 
-	<-time.After(cfg.StabilizeInterval)
+	<-time.After(config.StabilizeInterval)
 
 	return node, nil
 }
@@ -150,15 +147,14 @@ func (node *Node) join(other *gmajpb.Node) error {
 // This is an implementation of the psuedocode from figure 7 of chord paper.
 func (node *Node) stabilize() {
 	node.succMtx.RLock()
-	_succ := node.Successor
-	if _succ == nil {
+	succ := node.Successor
+	if succ == nil {
 		node.succMtx.RUnlock()
 		return
 	}
 	node.succMtx.RUnlock()
 
-	// TODO(r-medina): handle error
-	succ, err := node.GetPredecessorRPC(_succ)
+	succ, err := node.GetPredecessorRPC(succ)
 	if succ == nil || err != nil {
 		return
 	}
@@ -285,7 +281,7 @@ func (node *Node) closestPrecedingFinger(id []byte) *gmajpb.Node {
 	node.ftMtx.RLock()
 	defer node.ftMtx.RUnlock()
 
-	for i := cfg.KeySize - 1; i >= 0; i-- {
+	for i := config.KeySize - 1; i >= 0; i-- {
 		n := node.fingerTable[i]
 		if n.RemoteNode == nil {
 			continue
@@ -329,5 +325,5 @@ func (node *Node) Shutdown() {
 	node.connMtx.Unlock()
 	node.grpcs.Stop()
 
-	<-time.After(cfg.StabilizeInterval)
+	<-time.After(config.StabilizeInterval)
 }

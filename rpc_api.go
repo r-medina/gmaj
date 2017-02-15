@@ -161,7 +161,7 @@ func (node *Node) getNodeClient(
 	conn, err := grpc.Dial(
 		remoteNodeAddr,
 		// only way to do per-node credentials I can think of...
-		append(cfg.DialOptions, node.dialOpts...)...,
+		append(config.DialOptions, node.dialOpts...)...,
 	)
 	if err != nil {
 		return nil, err

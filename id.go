@@ -16,7 +16,7 @@ func HashKey(key string) []byte {
 	h.Write([]byte(key))
 	v := h.Sum(nil)
 
-	return v[:cfg.IDLength]
+	return v[:config.IDLength]
 }
 
 // IDToString converts a []byte to a big.Int string, useful for debugging/logging.

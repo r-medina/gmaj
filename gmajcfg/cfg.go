@@ -2,9 +2,12 @@ package gmajcfg
 
 import (
 	"errors"
+	"log"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
 )
 
 const dfltKeySize = 8
@@ -25,6 +28,8 @@ type Config struct {
 	ConnectionTimeout     time.Duration
 	RetryInterval         time.Duration
 	DialOptions           []grpc.DialOption
+
+	Log grpclog.Logger
 }
 
 // Validate checks some of the values of a Config to make sure they are valid.
@@ -51,4 +56,5 @@ var DefaultConfig = &Config{
 		grpc.WithInsecure(), // TODO(ricky): find a better way to use this for testing
 		grpc.WithTimeout(time.Second),
 	},
+	Log: log.New(os.Stderr, "gmaj: ", log.LstdFlags),
 }

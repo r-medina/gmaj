@@ -18,8 +18,8 @@ func TestInitFingerTable(t *testing.T) {
 
 	node.initFingerTable()
 
-	if size := len(node.fingerTable); size != cfg.KeySize {
-		t.Fatalf("Expected finger table length %v, got %v.", cfg.KeySize, size)
+	if want, got := config.KeySize, len(node.fingerTable); got != want {
+		t.Fatalf("Expected finger table length %v, got %v.", want, got)
 	}
 	node.ftMtx.RLock()
 	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.Id, []byte{1})) {
@@ -69,10 +69,8 @@ func TestFingerMath(t *testing.T) {
 	config := *gmajcfg.DefaultConfig
 	config.KeySize = 8
 	config.IDLength = 1
-	if err := SetConfig(&config); err != nil && err != errSetConfig {
-		t.Fatalf("unexpected error setting config: %v", err)
-	}
-	defer SetConfig(gmajcfg.DefaultConfig)
+	mustInit(&config)
+	defer mustInit(gmajcfg.DefaultConfig)
 
 	tests := []struct {
 		n   int64
@@ -105,7 +103,7 @@ func TestFingerMath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, cfg.KeySize)
+		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, config.KeySize)
 		want, got := big.NewInt(test.exp).Bytes(), result
 		if !bytes.Equal(got, want) {
 			t.Logf("running test [%02d]", i)

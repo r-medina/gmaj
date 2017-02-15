@@ -37,7 +37,7 @@ func Get(node *Node, key string) (string, error) {
 	// (e.g. write happened while transferring nodes).
 	value, err := node.GetRPC(remoteNode, key)
 	if err != nil {
-		<-time.After(cfg.RetryInterval)
+		<-time.After(config.RetryInterval)
 		remoteNode, err = node.locate(key)
 		if err != nil {
 			return "", err

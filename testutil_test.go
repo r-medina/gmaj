@@ -21,12 +21,12 @@ func init() {
 // Generally useful testing helper functions. Creates three successive nodes
 // with ids 0 (node1), 10 (node2) and 20 (node3).
 func create3SuccessiveNodes(t *testing.T) (*Node, *Node, *Node) {
-	definedID := make([]byte, cfg.IDLength)
+	definedID := make([]byte, config.IDLength)
 	node1 := createDefinedNode(t, nil, definedID)
-	definedID = make([]byte, cfg.IDLength)
+	definedID = make([]byte, config.IDLength)
 	definedID[0] = 55
 	node2 := createDefinedNode(t, node1.Node, definedID)
-	definedID = make([]byte, cfg.IDLength)
+	definedID = make([]byte, config.IDLength)
 	definedID[0] = 0xaa
 	node3 := createDefinedNode(t, node1.Node, definedID)
 	return node1, node2, node3

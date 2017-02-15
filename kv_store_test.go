@@ -116,17 +116,17 @@ func TestPutKey(t *testing.T) {
 		t.Fatalf("unexpected error making new node: %v", err)
 	}
 
-	key, val := "test", "value"
-	if err := Put(node, key, val); err != nil {
-		t.Fatalf("Unexpected error putting value %q with key %q: %v", val, key, err)
+	key, want := "test", "value"
+	if err := Put(node, key, want); err != nil {
+		t.Fatalf("Unexpected error putting value %q with key %q: %v", want, key, err)
 	}
 
-	_val, err := Get(node, "test")
+	got, err := Get(node, "test")
 	if err != nil {
 		t.Fatalf("unexpected error getting value with key %q: %v", key, err)
 	}
 
-	if want, got := val, _val; want != want {
+	if got != want {
 		t.Fatalf("expected %q, got %q", want, got)
 	}
 }
@@ -325,7 +325,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 		}
 	}
 
-	definedID := make([]byte, cfg.IDLength)
+	definedID := make([]byte, config.IDLength)
 	node4 := createDefinedNode(t, node3.Node, definedID)
 
 	<-time.After(testTimeout)
