@@ -10,42 +10,43 @@ package gmajpb;
 // This has all the RPC functions needed to maintain
 // a Chord cluster.
 service Chord {
-    rpc GetPredecessor(MT) returns (RemoteNode);
-    rpc GetSuccessor(MT) returns (RemoteNode);
-    rpc SetPredecessor(RemoteNode) returns (MT);
-    rpc SetSuccessor(RemoteNode) returns (MT);
-    rpc Notify(RemoteNode) returns (MT);
-    rpc ClosestPrecedingFinger(ID) returns (RemoteNode);
-    rpc FindSuccessor(ID) returns (RemoteNode);
+    // GetPredecessor returns the node believed to be the current predecessor.
+    rpc GetPredecessor(MT) returns (Node);
+    // GetSuccessor returns the node believed to be the current successor.
+    rpc GetSuccessor(MT) returns (Node);
+    // SetPredecessor sets Node as the predeccessor. This function does not do
+    // any validation.
+    rpc SetPredecessor(Node) returns (MT);
+    // SetPredecessor sets Node as the successor. This function does not do any
+    // validation.
+    rpc SetSuccessor(Node) returns (MT);
+    // Notify notifies Chord that Node thinks it is our predecessor. This has
+    // the potential to initiate the transferring of keys.
+    rpc Notify(Node) returns (MT);
+    // ClosestPrecedingFinger returns the entry of the finger table that
+    // precedes ID but is closest to it.
+    rpc ClosestPrecedingFinger(ID) returns (Node);
+    // FindSuccessor finds the node the succedes ID. May initiate RPC calls to
+    // other nodes.
+    rpc FindSuccessor(ID) returns (Node);
+    // Get returns the value in Chord ring for the given key.
     rpc Get(Key) returns (Val);
+    // Put writes a key value pair to the Chord ring.
     rpc Put(KeyVal) returns (MT);
-    rpc TransferKeys(TransferMsg) returns (MT);
+    // TransferKeys tells a node to transfer keys in a specified range to
+    // another node.
+    rpc TransferKeys(TransferKeysReq) returns (MT);
 }
 
-// NodeAPI is for writing client applications that are
-// completely agnostic of the Chord spec, but are aware
-service NodeAPI {
-    rpc Get(Key) returns (Val);
-    rpc Put(KeyVal) returns (MT);
-}
-
-// MembershipServer maintains a list of nodes in the Chord cluster
-// for client applications to be made aware of nodes on which to call
-// Get and Put.
-service MembershipServer {
-    rpc AddNode(RemoteNode) returns (MT);
-    rpc DelNode(RemoteNode) returns (MT);
-    rpc GetNode(MT) returns (RemoteNode);
-}
-
+// Node contains a node ID and address.
 message Node {
     bytes id = 1;
     string addr = 2;
 }
 
-message TransferMsg {
-    bytes fromID = 1;
-    RemoteNode toNode = 2;
+message TransferKeysReq {
+    bytes from_id = 1;
+    Node to_node = 2;
 }
 
 message MT {}

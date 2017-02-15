@@ -83,7 +83,7 @@ func (node *Node) Notify(
 	return mt, nil
 }
 
-// ClosestPrecedingFinger will find the closes preceding entry in the finger
+// ClosestPrecedingFinger will find the closest preceding entry in the finger
 // table based on the id.
 func (node *Node) ClosestPrecedingFinger(
 	ctx context.Context, id *gmajpb.ID,
@@ -134,7 +134,7 @@ func (node *Node) Put(ctx context.Context, keyVal *gmajpb.KeyVal) (*gmajpb.MT, e
 // TransferKeys transfers the appropriate keys on this node
 // to the remote node specified in the request.
 func (node *Node) TransferKeys(
-	ctx context.Context, tmsg *gmajpb.TransferMsg,
+	ctx context.Context, tmsg *gmajpb.TransferKeysReq,
 ) (*gmajpb.MT, error) {
 	if err := node.transferKeys(tmsg); err != nil {
 		return mt, err

@@ -14,8 +14,8 @@ const dfltKeySize = 8
 
 // configuration errors
 var (
-	ErrBadKeyLen = errors.New("key length must be divisible by 8")
-	ErrBadIDLen  = errors.New("ID length must be  key length/8")
+	ErrBadKeyLen = errors.New("gmaj: key length must be divisible by 8")
+	ErrBadIDLen  = errors.New("gmaj: ID length must be  key length/8")
 )
 
 // Config contains all the configuration information for a gmaj node.

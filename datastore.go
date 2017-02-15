@@ -132,7 +132,7 @@ func (node *Node) put(keyVal *gmajpb.KeyVal) error {
 	return nil
 }
 
-func (node *Node) transferKeys(tmsg *gmajpb.TransferMsg) error {
+func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 	toNode := tmsg.ToNode
 	if IDsEqual(toNode.Id, node.Id) {
 		return nil
@@ -147,7 +147,7 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferMsg) error {
 
 		// Check that the hashed_key lies in the correct range before putting
 		// the value in our predecessor.
-		if BetweenRightIncl(hashedKey, tmsg.FromID, toNode.Id) {
+		if BetweenRightIncl(hashedKey, tmsg.FromId, toNode.Id) {
 			if err := node.PutRPC(toNode, key, val); err != nil {
 				return err
 			}

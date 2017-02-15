@@ -20,7 +20,6 @@ var cfgOnce sync.Once
 
 func init() {
 	mustInit(gmajcfg.DefaultConfig)
-	config.Log.Println("something")
 }
 
 // Init allows consumers of this package to set the configuration. This has to

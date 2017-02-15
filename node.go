@@ -11,6 +11,9 @@ import (
 	"google.golang.org/grpc"
 )
 
+// ErrBadIDLen indicates that the passed in ID is of the wrong length.
+var ErrBadIDLen = errors.New("gmaj: ID length does not match length in configuration")
+
 // Node represents a node in the Chord mesh.
 type Node struct {
 	*gmajpb.Node
@@ -31,8 +34,6 @@ type Node struct {
 	dataStore map[string]string // Local datastore for this node
 	dsMtx     sync.RWMutex      // RWLock for datastore
 
-	dialOpts []grpc.DialOption
-
 	clientConns map[string]*clientConn
 	connMtx     sync.RWMutex
 }
@@ -40,15 +41,13 @@ type Node struct {
 var _ gmajpb.ChordServer = (*Node)(nil)
 
 // NewNode creates a Chord node with random ID based on listener address.
-func NewNode(parent *gmajpb.Node, opts ...grpc.DialOption) (*Node, error) {
-	return NewDefinedNode(parent, nil, opts...)
+func NewNode(parent *gmajpb.Node) (*Node, error) {
+	return NewDefinedNode(parent, nil)
 }
 
 // NewDefinedNode creates a Chord node with a pre-defined ID (useful for
 // testing) if a non-nil id is provided.
-func NewDefinedNode(
-	parent *gmajpb.Node, id []byte, dialOpts ...grpc.DialOption,
-) (*Node, error) {
+func NewDefinedNode(parent *gmajpb.Node, id []byte) (*Node, error) {
 	lis, err := net.Listen("tcp", "")
 	if err != nil {
 		return nil, err
@@ -57,13 +56,15 @@ func NewDefinedNode(
 	node := &Node{
 		Node:        new(gmajpb.Node),
 		shutdownCh:  make(chan struct{}),
-		dialOpts:    dialOpts,
 		clientConns: make(map[string]*clientConn),
 	}
 	node.grpcs = grpc.NewServer()
 	gmajpb.RegisterChordServer(node.grpcs, node)
 
 	if id != nil {
+		if len(id) != config.IDLength {
+			return nil, ErrBadIDLen
+		}
 		node.Id = id
 	} else {
 		node.Id = HashKey(lis.Addr().String())
@@ -102,10 +103,12 @@ func NewDefinedNode(
 	// thread 2: kick off timer to stabilize periodically
 	go func() {
 		for {
+			ticker := time.NewTicker(config.StabilizeInterval)
 			select {
-			case <-time.After(config.StabilizeInterval):
+			case <-ticker.C:
 				node.stabilize()
 			case <-node.shutdownCh:
+				ticker.Stop()
 				return
 			}
 		}
@@ -115,10 +118,12 @@ func NewDefinedNode(
 	go func() {
 		next := 0
 		for {
+			ticker := time.NewTicker(config.FixNextFingerInterval)
 			select {
-			case <-time.After(config.FixNextFingerInterval):
+			case <-ticker.C:
 				next = node.fixNextFinger(next)
 			case <-node.shutdownCh:
+				ticker.Stop()
 				return
 			}
 		}
@@ -198,7 +203,7 @@ func (node *Node) notify(remoteNode *gmajpb.Node) {
 
 	if Between(node.Predecessor.Id, prevID, node.Id) {
 		node.transferKeys(
-			&gmajpb.TransferMsg{FromID: prevID, ToNode: node.Predecessor},
+			&gmajpb.TransferKeysReq{FromId: prevID, ToNode: node.Predecessor},
 		)
 	}
 }
@@ -307,8 +312,8 @@ func (node *Node) Shutdown() {
 	node.succMtx.RLock()
 	if node.Addr != node.Successor.Addr {
 		node.predMtx.Lock()
-		_ = node.transferKeys(&gmajpb.TransferMsg{
-			FromID: node.Predecessor.Id,
+		_ = node.transferKeys(&gmajpb.TransferKeysReq{
+			FromId: node.Predecessor.Id,
 			ToNode: node.Successor,
 		})
 		_ = node.SetPredecessorRPC(node.Successor, node.Predecessor)

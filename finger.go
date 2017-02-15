@@ -43,12 +43,13 @@ func (node *Node) initFingerTable() {
 // to fix entries in our finger table.
 func (node *Node) fixNextFinger(next int) int {
 	nextHash := fingerMath(node.Id, next, config.KeySize)
-	successorNode, err := node.findSuccessor(nextHash)
+	succ, err := node.findSuccessor(nextHash)
 	if err != nil {
+		// TODO: handle failed client here
 		return next
 	}
 
-	finger := newFingerEntry(nextHash, successorNode)
+	finger := newFingerEntry(nextHash, succ)
 	node.ftMtx.Lock()
 	node.fingerTable[next] = finger
 	node.ftMtx.Unlock()
