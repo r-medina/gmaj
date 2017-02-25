@@ -18,6 +18,8 @@ var ErrBadIDLen = errors.New("gmaj: ID length does not match length in configura
 type Node struct {
 	*gmajpb.Node
 
+	opts nodeOptions
+
 	grpcs *grpc.Server
 
 	Predecessor *gmajpb.Node // This Node's predecessor
@@ -38,27 +40,77 @@ type Node struct {
 	connMtx     sync.RWMutex
 }
 
-var _ gmajpb.ChordServer = (*Node)(nil)
-
-// NewNode creates a Chord node with random ID based on listener address.
-func NewNode(parent *gmajpb.Node) (*Node, error) {
-	return newNode(parent, nil)
+type nodeOptions struct {
+	id         []byte
+	addr       string
+	parent     *gmajpb.Node
+	serverOpts []grpc.ServerOption
+	dialOpts   []grpc.DialOption
 }
 
-// newNode creates a Chord node with a pre-defined ID (useful for
-// testing) if a non-nil id is provided.
-func newNode(parent *gmajpb.Node, id []byte) (*Node, error) {
-	lis, err := net.Listen("tcp", "")
-	if err != nil {
-		return nil, err
-	}
+// NodeOption is a function that customizes a Node.
+type NodeOption func(o *nodeOptions)
 
+// withID  sets a custom ID on the nodee. Useful for testing.
+func withID(id []byte) NodeOption {
+	return func(o *nodeOptions) {
+		o.id = id
+	}
+}
+
+// WithAddress specifies an address that the node will listen on.
+func WithAddress(addr string) NodeOption {
+	return func(o *nodeOptions) {
+		o.addr = addr
+	}
+}
+
+// WithParent specifies a parent to which the node should connect.
+func WithParent(node *gmajpb.Node) NodeOption {
+	return func(o *nodeOptions) {
+		o.parent = node
+	}
+}
+
+// WithGRPCServerOptions instantiates the gRPC server with the specified options.
+func WithGRPCServerOptions(opts ...grpc.ServerOption) NodeOption {
+	return func(o *nodeOptions) {
+		o.serverOpts = opts
+	}
+}
+
+// WithGRPCDialOptions makes the node dial other nodes with the specified gRPC
+// dial options.
+func WithGRPCDialOptions(opts ...grpc.DialOption) NodeOption {
+	return func(o *nodeOptions) {
+		o.dialOpts = opts
+	}
+}
+
+var _ gmajpb.ChordServer = (*Node)(nil)
+
+// NewNode creates a Chord node with a pre-defined ID (useful for
+// testing) if a non-nil id is provided.
+func NewNode(opts ...NodeOption) (*Node, error) {
 	node := &Node{
 		Node:        new(gmajpb.Node),
 		shutdownCh:  make(chan struct{}),
 		clientConns: make(map[string]*clientConn),
 	}
-	node.grpcs = grpc.NewServer()
+
+	for _, opt := range opts {
+		opt(&node.opts)
+	}
+
+	id := node.opts.id
+	parent := node.opts.parent
+
+	lis, err := net.Listen("tcp", node.opts.addr)
+	if err != nil {
+		return nil, err
+	}
+
+	node.grpcs = grpc.NewServer(node.opts.serverOpts...)
 	gmajpb.RegisterChordServer(node.grpcs, node)
 
 	if id != nil {
@@ -311,17 +363,20 @@ func (node *Node) Shutdown() {
 	// Do nothing if we are our own successor (i.e. we are the only node in the
 	// ring).
 	node.succMtx.RLock()
-	if node.Addr != node.Successor.Addr {
-		node.predMtx.Lock()
-		_ = node.transferKeys(&gmajpb.TransferKeysReq{
-			FromId: node.Predecessor.Id,
-			ToNode: node.Successor,
-		})
-		_ = node.SetPredecessorRPC(node.Successor, node.Predecessor)
-		_ = node.SetSuccessorRPC(node.Predecessor, node.Successor)
-		node.predMtx.Unlock()
-	}
+	node.predMtx.Lock()
+	pred := node.Predecessor
+	succ := node.Successor
+	node.predMtx.Unlock()
 	node.succMtx.RUnlock()
+
+	if node.Addr != node.Successor.Addr {
+		_ = node.transferKeys(&gmajpb.TransferKeysReq{
+			FromId: pred.Id,
+			ToNode: succ,
+		})
+		_ = node.SetPredecessorRPC(succ, pred)
+		_ = node.SetSuccessorRPC(pred, succ)
+	}
 
 	node.connMtx.Lock()
 	for _, cc := range node.clientConns {
