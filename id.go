@@ -10,8 +10,8 @@ import (
 	"math/big"
 )
 
-// HashKey hashes a string to its appropriate size.
-func HashKey(key string) []byte {
+// hashKey hashes a string to its appropriate size.
+func hashKey(key string) []byte {
 	h := sha1.New()
 	h.Write([]byte(key))
 	v := h.Sum(nil)
@@ -27,13 +27,13 @@ func IDToString(id []byte) string {
 	return keyInt.String()
 }
 
-// IDsEqual returns if a and b are equal.
-func IDsEqual(a, b []byte) bool {
+// idsEqual returns if a and b are equal.
+func idsEqual(a, b []byte) bool {
 	return bytes.Equal(a, b)
 }
 
-// AddIDs adds two IDs.
-func AddIDs(a, b []byte) []byte {
+// addIDs adds two IDs.
+func addIDs(a, b []byte) []byte {
 	aInt := big.Int{}
 	aInt.SetBytes(a)
 
@@ -45,14 +45,14 @@ func AddIDs(a, b []byte) []byte {
 	return sum.Bytes()
 }
 
-// Between returns if x is between a and b.
+// between returns if x is between a and b.
 // On this crude ascii Chord ring, x is between (a : b)
 //        ___
 //       /   \-a
 //      |     |
 //     b-\   /-x
 //        ---
-func Between(x, a, b []byte) bool {
+func between(x, a, b []byte) bool {
 	xInt := (&big.Int{}).SetBytes(x)
 	aInt := (&big.Int{}).SetBytes(a)
 	bInt := (&big.Int{}).SetBytes(b)
@@ -74,8 +74,8 @@ func Between(x, a, b []byte) bool {
 	return false
 }
 
-// BetweenRightIncl is like Between, but includes the right boundary.
+// betweenRightIncl is like Between, but includes the right boundary.
 // That is, is x between (a : b]
-func BetweenRightIncl(x, a, b []byte) bool {
-	return Between(x, a, b) || bytes.Equal(x, b)
+func betweenRightIncl(x, a, b []byte) bool {
+	return between(x, a, b) || bytes.Equal(x, b)
 }

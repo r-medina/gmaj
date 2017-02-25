@@ -229,7 +229,7 @@ func assertClosest(t *testing.T, node, closest *Node, id byte) {
 	remoteNode, err := node.ClosestPrecedingFingerRPC(node.Node, []byte{id})
 	if err != nil {
 		t.Fatalf("Unexpected error while getting closest:%v", err)
-	} else if !IDsEqual(remoteNode.Id, closest.Id) {
+	} else if !idsEqual(remoteNode.Id, closest.Id) {
 		t.Fatalf("Expected %v, got %v", closest.Id, remoteNode.Id)
 	}
 }

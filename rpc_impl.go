@@ -65,10 +65,6 @@ func (node *Node) SetSuccessor(
 func (node *Node) Notify(
 	ctx context.Context, remoteNode *gmajpb.Node,
 ) (*gmajpb.MT, error) {
-	if remoteNode == nil {
-		return mt, errors.New("remoteNode cannot be nil")
-	}
-
 	node.notify(remoteNode)
 
 	// If node.Predecessor is nil at this point, we were trying to notify
@@ -76,7 +72,7 @@ func (node *Node) Notify(
 	// was correctly updated.
 	node.predMtx.Lock()
 	defer node.predMtx.Unlock()
-	if node.Predecessor != nil && !IDsEqual(node.Predecessor.Id, remoteNode.Id) {
+	if node.Predecessor != nil && !idsEqual(node.Predecessor.Id, remoteNode.Id) {
 		return mt, errors.New("remoteNode is not node's predecessor")
 	}
 
@@ -106,7 +102,7 @@ func (node *Node) FindSuccessor(
 	}
 
 	if succ == nil {
-		return emptyRemote, errors.New("Node does not have a successor")
+		return emptyRemote, errors.New("cannot find successor")
 	}
 
 	return succ, nil
@@ -125,7 +121,7 @@ func (node *Node) Get(ctx context.Context, key *gmajpb.Key) (*gmajpb.Val, error)
 // Put stores a key value pair on the node.
 func (node *Node) Put(ctx context.Context, keyVal *gmajpb.KeyVal) (*gmajpb.MT, error) {
 	if err := node.put(keyVal); err != nil {
-		return mt, err
+		return nil, err
 	}
 
 	return mt, nil
@@ -137,7 +133,7 @@ func (node *Node) TransferKeys(
 	ctx context.Context, tmsg *gmajpb.TransferKeysReq,
 ) (*gmajpb.MT, error) {
 	if err := node.transferKeys(tmsg); err != nil {
-		return mt, err
+		return nil, err
 	}
 
 	return mt, nil

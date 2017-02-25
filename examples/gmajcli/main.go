@@ -82,6 +82,7 @@ func main() {
 			fmt.Println("Unable to create new node!")
 			log.Fatal(err)
 		}
+		parent = nodes[i].Node
 
 		fmt.Printf(
 			"Created -id %v -addr %v\n",
@@ -130,12 +131,14 @@ func main() {
 			}
 		case "quit":
 			fmt.Println("goodbye")
-			for _, node := range nodes {
-				node.Shutdown()
-			}
-			return
+
+			break
 		}
 
 		fmt.Print(prompt)
+	}
+
+	for _, node := range nodes {
+		node.Shutdown()
 	}
 }

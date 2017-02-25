@@ -2,21 +2,13 @@ package gmaj
 
 import (
 	"errors"
+	"time"
 
 	"github.com/r-medina/gmaj/gmajpb"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
-
-//
-// RPC connection map cache
-//
-
-type clientConn struct {
-	client gmajpb.ChordClient
-	conn   *grpc.ClientConn
-}
 
 //
 // Chord Node RPC API
@@ -147,6 +139,15 @@ func (node *Node) TransferKeysRPC(
 	return err
 }
 
+//
+// RPC connection map cache
+//
+
+type clientConn struct {
+	client gmajpb.ChordClient
+	conn   *grpc.ClientConn
+}
+
 // getChordClient is a helper function to make a call to a remote node.
 func (node *Node) getChordClient(
 	remoteNode *gmajpb.Node,
@@ -181,8 +182,8 @@ func (node *Node) getChordClient(
 func dial(addr string) (*grpc.ClientConn, error) {
 	return grpc.Dial(addr, append(
 		config.DialOptions,
-		// grpc.WithBlock(),
-		// grpc.WithTimeout(1*time.Second),
-		// grpc.FailOnNonTempDialError(true),
+		grpc.WithBlock(),
+		grpc.WithTimeout(5*time.Second),
+		grpc.FailOnNonTempDialError(true),
 	)...)
 }

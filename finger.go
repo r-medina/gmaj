@@ -61,9 +61,9 @@ func (node *Node) fixNextFinger(next int) int {
 // needed to update finger table entries.
 func fingerMath(n []byte, i int, m int) []byte {
 	iInt := big.NewInt(2)
-	iInt.Exp(iInt, big.NewInt(int64(i)), max)
+	iInt.Exp(iInt, big.NewInt(int64(i)), config.max)
 	mInt := big.NewInt(2)
-	mInt.Exp(mInt, big.NewInt(int64(m)), max)
+	mInt.Exp(mInt, big.NewInt(int64(m)), config.max)
 
 	res := &big.Int{} // res will pretty much be an accumulator
 	res.SetBytes(n).Add(res, iInt).Mod(res, mInt)

@@ -30,8 +30,8 @@ func Get(node *Node, key string) (string, error) {
 		return "", err
 	}
 
-	// TODO(asubiotto): Smart retries on error. Implement channel that notifies
-	// when stabilize has been called.
+	// TODO(asubiotto): Smart retries on not found error. Implement channel
+	// that notifies when stabilize has been called.
 
 	// Retry on error because it might be due to temporary unavailability
 	// (e.g. write happened while transferring nodes).
@@ -66,27 +66,26 @@ func Put(node *Node, key string, value string) error {
 
 // locate helps find the appropriate node in the ring.
 func (node *Node) locate(key string) (*gmajpb.Node, error) {
-	return node.FindSuccessorRPC(node.Node, HashKey(key))
+	return node.findSuccessor(hashKey(key))
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys
 // from its successor.
 func (node *Node) obtainNewKeys() error {
 	node.succMtx.RLock()
-	defer node.succMtx.RUnlock()
+	succ := node.Successor
+	node.succMtx.RUnlock()
 
 	// TODO(asubiotto): Test the case where there are two nodes floating around
 	// that need keys.
 	// Assume new predecessor has been set.
-	prevPredecessor, err := node.GetPredecessorRPC(node.Successor)
+	prevPredecessor, err := node.GetPredecessorRPC(succ)
 	if err != nil {
 		return err
 	}
 
 	return node.TransferKeysRPC(
-		node.Successor,
-		node.Id,
-		prevPredecessor,
+		succ, node.Id, prevPredecessor,
 	) // implicitly correct even when prevPredecessor.ID == nil
 }
 
@@ -95,26 +94,17 @@ func (node *Node) obtainNewKeys() error {
 //
 
 func (node *Node) get(key *gmajpb.Key) (string, error) {
-
-	if node.dataStore == nil {
-		return "", errNoDatastore
-	}
-
 	node.dsMtx.RLock()
 	val, ok := node.dataStore[key.Key]
 	node.dsMtx.RUnlock()
 	if !ok {
-		return "", errors.New("Key does not exist")
+		return "", errors.New("key does not exist")
 	}
 
 	return val, nil
 }
 
 func (node *Node) put(keyVal *gmajpb.KeyVal) error {
-	if node.dataStore == nil {
-		return errNoDatastore
-	}
-
 	key := keyVal.Key
 	val := keyVal.Val
 
@@ -122,7 +112,7 @@ func (node *Node) put(keyVal *gmajpb.KeyVal) error {
 	_, exists := node.dataStore[key]
 	node.dsMtx.RUnlock()
 	if exists {
-		return errors.New("Cannot modify an existing value")
+		return errors.New("cannot modify an existing value")
 	}
 
 	node.dsMtx.Lock()
@@ -134,7 +124,7 @@ func (node *Node) put(keyVal *gmajpb.KeyVal) error {
 
 func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 	toNode := tmsg.ToNode
-	if IDsEqual(toNode.Id, node.Id) {
+	if idsEqual(toNode.Id, node.Id) {
 		return nil
 	}
 
@@ -143,11 +133,11 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 
 	toDelete := []string{}
 	for key, val := range node.dataStore {
-		hashedKey := HashKey(key)
+		hashedKey := hashKey(key)
 
 		// Check that the hashed_key lies in the correct range before putting
 		// the value in our predecessor.
-		if BetweenRightIncl(hashedKey, tmsg.FromId, toNode.Id) {
+		if betweenRightIncl(hashedKey, tmsg.FromId, toNode.Id) {
 			if err := node.PutRPC(toNode, key, val); err != nil {
 				return err
 			}

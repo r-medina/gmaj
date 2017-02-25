@@ -42,12 +42,12 @@ var _ gmajpb.ChordServer = (*Node)(nil)
 
 // NewNode creates a Chord node with random ID based on listener address.
 func NewNode(parent *gmajpb.Node) (*Node, error) {
-	return NewDefinedNode(parent, nil)
+	return newNode(parent, nil)
 }
 
-// NewDefinedNode creates a Chord node with a pre-defined ID (useful for
+// newNode creates a Chord node with a pre-defined ID (useful for
 // testing) if a non-nil id is provided.
-func NewDefinedNode(parent *gmajpb.Node, id []byte) (*Node, error) {
+func newNode(parent *gmajpb.Node, id []byte) (*Node, error) {
 	lis, err := net.Listen("tcp", "")
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func NewDefinedNode(parent *gmajpb.Node, id []byte) (*Node, error) {
 		}
 		node.Id = id
 	} else {
-		node.Id = HashKey(lis.Addr().String())
+		node.Id = hashKey(lis.Addr().String())
 	}
 	node.Addr = lis.Addr().String()
 	node.dataStore = make(map[string]string)
@@ -87,7 +87,7 @@ func NewDefinedNode(parent *gmajpb.Node, id []byte) (*Node, error) {
 			return nil, err
 		}
 
-		if IDsEqual(remoteNode.Id, node.Id) {
+		if idsEqual(remoteNode.Id, node.Id) {
 			return nil, errors.New("node with id already exists")
 		}
 
@@ -96,7 +96,7 @@ func NewDefinedNode(parent *gmajpb.Node, id []byte) (*Node, error) {
 		joinNode = node.Node
 	}
 
-	if err = node.join(joinNode); err != nil {
+	if err := node.join(joinNode); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +168,7 @@ func (node *Node) stabilize() {
 	// If the predecessor of our successor is nil (succ), it means that our
 	// successor has not had the chance to update their predecessor pointer. We
 	// still want to notify them of our belief that we are its predecessor.
-	if succ.Id != nil && Between(succ.Id, node.Id, node.Successor.Id) {
+	if succ.Id != nil && between(succ.Id, node.Id, node.Successor.Id) {
 		node.succMtx.Lock()
 		node.Successor = succ
 		node.succMtx.Unlock()
@@ -190,7 +190,7 @@ func (node *Node) notify(remoteNode *gmajpb.Node) {
 	// circle) since we are guaranteed that each node's successor link is
 	// correct.
 	if !(node.Predecessor == nil ||
-		Between(remoteNode.Id, node.Predecessor.Id, node.Id)) {
+		between(remoteNode.Id, node.Predecessor.Id, node.Id)) {
 		return
 	}
 
@@ -202,7 +202,7 @@ func (node *Node) notify(remoteNode *gmajpb.Node) {
 	// Update predecessor and transfer keys.
 	node.Predecessor = remoteNode
 
-	if Between(node.Predecessor.Id, prevID, node.Id) {
+	if between(node.Predecessor.Id, prevID, node.Id) {
 		node.transferKeys(
 			&gmajpb.TransferKeysReq{FromId: prevID, ToNode: node.Predecessor},
 		)
@@ -244,7 +244,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.Node, error) {
 	if succ == nil {
 		return pred, nil
 	}
-	if !BetweenRightIncl(id, pred.Id, succ.Id) {
+	if !betweenRightIncl(id, pred.Id, succ.Id) {
 		pred = node.closestPrecedingFinger(id)
 	} else {
 		return pred, nil
@@ -257,7 +257,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.Node, error) {
 		return pred, nil
 	}
 
-	for !BetweenRightIncl(id, pred.Id, succ.Id) {
+	for !betweenRightIncl(id, pred.Id, succ.Id) {
 		var err error
 		pred, err = node.ClosestPrecedingFingerRPC(succ, id)
 		if err != nil {
@@ -295,7 +295,7 @@ func (node *Node) closestPrecedingFinger(id []byte) *gmajpb.Node {
 
 		// Check that the node we believe is the successor for
 		// (node + 2^i) mod 2^m also precedes id.
-		if Between(n.RemoteNode.Id, node.Id, id) {
+		if between(n.RemoteNode.Id, node.Id, id) {
 			return n.RemoteNode
 		}
 	}
@@ -330,6 +330,7 @@ func (node *Node) Shutdown() {
 	node.clientConns = nil
 	node.connMtx.Unlock()
 	node.grpcs.Stop()
-
-	<-time.After(config.StabilizeInterval)
+	node.dsMtx.Lock()
+	node.dataStore = nil
+	node.dsMtx.Unlock()
 }

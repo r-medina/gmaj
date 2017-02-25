@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/r-medina/gmaj/gmajcfg"
 	"github.com/r-medina/gmaj/gmajpb"
 )
 
@@ -22,11 +21,11 @@ func TestInitFingerTable(t *testing.T) {
 		t.Fatalf("Expected finger table length %v, got %v.", want, got)
 	}
 	node.ftMtx.RLock()
-	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.Id, []byte{1})) {
+	if !bytes.Equal(node.fingerTable[0].StartID, addIDs(node.Id, []byte{1})) {
 		node.ftMtx.RUnlock()
 		t.Fatalf("First finger entry start is wrong. got %v, expected %v",
 			node.fingerTable[0].StartID,
-			AddIDs(node.Id, []byte{1}))
+			addIDs(node.Id, []byte{1}))
 	}
 	node.ftMtx.RUnlock()
 
@@ -49,7 +48,7 @@ func TestFixNextFinger(t *testing.T) {
 		t.Fatalf("next should not have changed.")
 	}
 
-	if !bytes.Equal(node1.fingerTable[0].StartID, AddIDs(node1.Id, []byte{1})) {
+	if !bytes.Equal(node1.fingerTable[0].StartID, addIDs(node1.Id, []byte{1})) {
 		t.Fatalf("First finger entry start is wrong.")
 	}
 
@@ -66,12 +65,9 @@ func TestFixNextFinger(t *testing.T) {
 }
 
 func TestFingerMath(t *testing.T) {
-	config := *gmajcfg.DefaultConfig
-	config.KeySize = 8
-	config.IDLength = 1
-	mustInit(&config)
-	defer mustInit(gmajcfg.DefaultConfig)
+	t.Parallel()
 
+	// this test expects the key size to be 8
 	tests := []struct {
 		n   int64
 		i   int

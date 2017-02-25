@@ -11,12 +11,12 @@ import (
 var errSetConfig = errors.New("cannot set configuration more than once")
 
 // the configuration for whole package
-var config gmajcfg.Config
-
-// the largest possible ID value
-var max *big.Int
-
-var cfgOnce sync.Once
+var config struct {
+	gmajcfg.Config
+	// the largest possible ID value
+	max *big.Int
+	o   sync.Once
+}
 
 func init() {
 	mustInit(gmajcfg.DefaultConfig)
@@ -24,43 +24,28 @@ func init() {
 
 // Init allows consumers of this package to set the configuration. This has to
 // happen before any other functionality of the package is used.
+// Should only be called once.
 func Init(cfg *gmajcfg.Config) error {
-	if err := setConfig(cfg); err != nil {
-		return err
-	}
-
-	max = getMax()
-
-	return nil
-}
-
-// setConfig sets the configuration for the whole package. Should only be called once
-func setConfig(cfg *gmajcfg.Config) error {
-	var called bool
-	var err error
-	cfgOnce.Do(func() {
-		defer func() { called = true }()
-
-		if err = config.Validate(); err != nil {
+	err := errSetConfig
+	config.o.Do(func() {
+		if err = cfg.Validate(); err != nil {
 			return
 		}
 
-		config = *cfg
+		config.Config = *cfg
+		config.max = getMax()
 	})
 
-	if called {
-		return err
-	}
-
-	return errSetConfig
+	return err
 }
 
 func mustInit(cfg *gmajcfg.Config) {
 	if err := cfg.Validate(); err != nil {
 		config.Log.Fatalf("error setting configuration: %v", err)
 	}
-	config = *cfg
-	max = getMax()
+
+	config.Config = *cfg
+	config.max = getMax()
 }
 
 func getMax() *big.Int {

@@ -34,7 +34,7 @@ func TestBetween(t *testing.T) {
 		x := big.NewInt(test.x).Bytes()
 		a := big.NewInt(test.a).Bytes()
 		b := big.NewInt(test.b).Bytes()
-		if want, got := test.exp, Between(x, a, b); got != want {
+		if want, got := test.exp, between(x, a, b); got != want {
 			t.Logf("running test [%02d]", i)
 			t.Fatalf("expected %t for Between(%d, %d, %d), got %t",
 				want, test.x, test.a, test.b, got,
@@ -71,7 +71,7 @@ func TestBetweenRightIncl(t *testing.T) {
 		x := big.NewInt(test.x).Bytes()
 		a := big.NewInt(test.a).Bytes()
 		b := big.NewInt(test.b).Bytes()
-		if want, got := test.exp, BetweenRightIncl(x, a, b); got != want {
+		if want, got := test.exp, betweenRightIncl(x, a, b); got != want {
 			t.Logf("running test [%02d]", i)
 			t.Fatalf("expected %t for BetweenRightIncl(%d, %d, %d), got %t",
 				want, test.x, test.a, test.b, got,
