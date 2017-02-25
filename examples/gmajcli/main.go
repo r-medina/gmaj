@@ -77,7 +77,7 @@ func main() {
 
 	var err error
 	for i := range nodes {
-		nodes[i], err = gmaj.NewNode(parent)
+		nodes[i], err = gmaj.NewNode(gmaj.WithParent(parent))
 		if err != nil {
 			fmt.Println("Unable to create new node!")
 			log.Fatal(err)

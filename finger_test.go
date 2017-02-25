@@ -29,6 +29,8 @@ func TestInitFingerTable(t *testing.T) {
 	}
 	node.ftMtx.RUnlock()
 
+	node.ftMtx.Lock()
+	defer node.ftMtx.Unlock()
 	if !reflect.DeepEqual(node.fingerTable[0].RemoteNode, node.Node) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
@@ -56,7 +58,7 @@ func TestFixNextFinger(t *testing.T) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 
-	node1, err := NewNode(nil)
+	node1, err := NewNode()
 	if err != nil {
 		t.Fatal(err)
 	}

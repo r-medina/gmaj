@@ -37,7 +37,7 @@ func createSimpleNode(t *testing.T, ring *gmajpb.Node) *Node {
 }
 
 func createDefinedNode(t *testing.T, ring *gmajpb.Node, id []byte) *Node {
-	node, err := newNode(ring, id)
+	node, err := NewNode(WithParent(ring), withID(id))
 	if err != nil {
 		t.Fatalf("Unable to create node, received error:%v", err)
 	}

@@ -161,7 +161,7 @@ func (node *Node) getChordClient(
 		return cc.client, nil
 	}
 
-	conn, err := dial(addr)
+	conn, err := dial(addr, node.opts.dialOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,11 +179,12 @@ func (node *Node) getChordClient(
 	return client, nil
 }
 
-func dial(addr string) (*grpc.ClientConn, error) {
-	return grpc.Dial(addr, append(
+func dial(addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return grpc.Dial(addr, append(append(
 		config.DialOptions,
 		grpc.WithBlock(),
 		grpc.WithTimeout(5*time.Second),
-		grpc.FailOnNonTempDialError(true),
+		grpc.FailOnNonTempDialError(true)),
+		opts...,
 	)...)
 }
