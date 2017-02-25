@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/r-medina/gmaj/gmajcfg"
+	"github.com/r-medina/gmaj/gmajpb"
 )
 
 func TestInitFingerTable(t *testing.T) {
@@ -17,19 +17,19 @@ func TestInitFingerTable(t *testing.T) {
 
 	node.initFingerTable()
 
-	if size := len(node.fingerTable); size != cfg.KeySize {
-		t.Fatalf("Expected finger table length %v, got %v.", cfg.KeySize, size)
+	if want, got := config.KeySize, len(node.fingerTable); got != want {
+		t.Fatalf("Expected finger table length %v, got %v.", want, got)
 	}
 	node.ftMtx.RLock()
-	if !bytes.Equal(node.fingerTable[0].StartID, AddIDs(node.ID(), []byte{1})) {
+	if !bytes.Equal(node.fingerTable[0].StartID, addIDs(node.Id, []byte{1})) {
 		node.ftMtx.RUnlock()
 		t.Fatalf("First finger entry start is wrong. got %v, expected %v",
 			node.fingerTable[0].StartID,
-			AddIDs(node.ID(), []byte{1}))
+			addIDs(node.Id, []byte{1}))
 	}
 	node.ftMtx.RUnlock()
 
-	if !reflect.DeepEqual(*node.fingerTable[0].RemoteNode, node.remoteNode) {
+	if !reflect.DeepEqual(node.fingerTable[0].RemoteNode, node.Node) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 }
@@ -37,9 +37,9 @@ func TestInitFingerTable(t *testing.T) {
 func TestFixNextFinger(t *testing.T) {
 	t.Parallel()
 
-	node1 := new(Node)
-	node1.remoteNode.Id = []byte{10}
-	node1.remoteNode.Addr = "localhost"
+	node1 := &Node{Node: new(gmajpb.Node)}
+	node1.Id = []byte{10}
+	node1.Addr = "localhost"
 	node1.initFingerTable()
 	next := 1
 	next = node1.fixNextFinger(next) // shouldn't do anything because no rpc
@@ -48,11 +48,11 @@ func TestFixNextFinger(t *testing.T) {
 		t.Fatalf("next should not have changed.")
 	}
 
-	if !bytes.Equal(node1.fingerTable[0].StartID, AddIDs(node1.ID(), []byte{1})) {
+	if !bytes.Equal(node1.fingerTable[0].StartID, addIDs(node1.Id, []byte{1})) {
 		t.Fatalf("First finger entry start is wrong.")
 	}
 
-	if !reflect.DeepEqual(*node1.fingerTable[0].RemoteNode, node1.remoteNode) {
+	if !reflect.DeepEqual(node1.fingerTable[0].RemoteNode, node1.Node) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 
@@ -65,14 +65,9 @@ func TestFixNextFinger(t *testing.T) {
 }
 
 func TestFingerMath(t *testing.T) {
-	config := *gmajcfg.DefaultConfig
-	config.KeySize = 8
-	config.IDLength = 1
-	if err := SetConfig(&config); err != nil && err != errSetConfig {
-		t.Fatalf("unexpected error setting config: %v", err)
-	}
-	defer SetConfig(gmajcfg.DefaultConfig)
+	t.Parallel()
 
+	// this test expects the key size to be 8
 	tests := []struct {
 		n   int64
 		i   int
@@ -104,7 +99,7 @@ func TestFingerMath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, cfg.KeySize)
+		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, config.KeySize)
 		want, got := big.NewInt(test.exp).Bytes(), result
 		if !bytes.Equal(got, want) {
 			t.Logf("running test [%02d]", i)
@@ -153,7 +148,7 @@ func TestStabilizedFingerTable(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		want := test.n2.ID()
+		want := test.n2.Id
 		test.n1.ftMtx.RLock()
 		got := test.n1.fingerTable[test.i].RemoteNode.Id
 		test.n1.ftMtx.RUnlock()

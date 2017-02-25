@@ -21,23 +21,23 @@ func init() {
 // Generally useful testing helper functions. Creates three successive nodes
 // with ids 0 (node1), 10 (node2) and 20 (node3).
 func create3SuccessiveNodes(t *testing.T) (*Node, *Node, *Node) {
-	definedID := make([]byte, cfg.IDLength)
+	definedID := make([]byte, config.IDLength)
 	node1 := createDefinedNode(t, nil, definedID)
-	definedID = make([]byte, cfg.IDLength)
+	definedID = make([]byte, config.IDLength)
 	definedID[0] = 55
-	node2 := createDefinedNode(t, node1.RemoteNode(), definedID)
-	definedID = make([]byte, cfg.IDLength)
+	node2 := createDefinedNode(t, node1.Node, definedID)
+	definedID = make([]byte, config.IDLength)
 	definedID[0] = 0xaa
-	node3 := createDefinedNode(t, node1.RemoteNode(), definedID)
+	node3 := createDefinedNode(t, node1.Node, definedID)
 	return node1, node2, node3
 }
 
-func createSimpleNode(t *testing.T, ring *gmajpb.RemoteNode) *Node {
+func createSimpleNode(t *testing.T, ring *gmajpb.Node) *Node {
 	return createDefinedNode(t, ring, nil)
 }
 
-func createDefinedNode(t *testing.T, ring *gmajpb.RemoteNode, id []byte) *Node {
-	node, err := NewDefinedNode(ring, id)
+func createDefinedNode(t *testing.T, ring *gmajpb.Node, id []byte) *Node {
+	node, err := newNode(ring, id)
 	if err != nil {
 		t.Fatalf("Unable to create node, received error:%v", err)
 	}

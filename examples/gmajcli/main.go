@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/r-medina/gmaj"
@@ -27,7 +28,7 @@ func nodeToString(node *gmaj.Node) string {
 	}
 
 	return fmt.Sprintf(
-		"Node-%v: {succ:%v, pred:%v}", gmaj.IDToString(node.ID()), succ, pred,
+		"Node-%v: {succ:%v, pred:%v}", gmaj.IDToString(node.Id), succ, pred,
 	)
 }
 
@@ -44,13 +45,13 @@ func main() {
 
 	flag.Parse()
 
-	var parent *gmajpb.RemoteNode
+	var parent *gmajpb.Node
 	if *addrPtr == "" {
 		parent = nil
 	} else {
 		val := big.NewInt(0)
 		val.SetString(*idPtr, 10)
-		parent = &gmajpb.RemoteNode{
+		parent = &gmajpb.Node{
 			Id:   val.Bytes(),
 			Addr: *addrPtr,
 		}
@@ -60,18 +61,32 @@ func main() {
 		)
 	}
 
-	var err error
 	nodes := make([]*gmaj.Node, *countPtr)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+
+		for _, node := range nodes {
+			node.Shutdown()
+		}
+
+		os.Exit(1)
+	}()
+
+	var err error
 	for i := range nodes {
 		nodes[i], err = gmaj.NewNode(parent)
 		if err != nil {
 			fmt.Println("Unable to create new node!")
 			log.Fatal(err)
 		}
+		parent = nodes[i].Node
 
 		fmt.Printf(
 			"Created -id %v -addr %v\n",
-			gmaj.IDToString(nodes[i].ID()), nodes[i].Addr(),
+			gmaj.IDToString(nodes[i].Id), nodes[i].Addr,
 		)
 	}
 
@@ -116,12 +131,14 @@ func main() {
 			}
 		case "quit":
 			fmt.Println("goodbye")
-			for _, node := range nodes {
-				node.Shutdown()
-			}
-			return
+
+			break
 		}
 
 		fmt.Print(prompt)
+	}
+
+	for _, node := range nodes {
+		node.Shutdown()
 	}
 }

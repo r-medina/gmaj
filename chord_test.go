@@ -17,7 +17,7 @@ func TestErrorCreationNodeExistingID(t *testing.T) {
 	t.Parallel()
 
 	node := createSimpleNode(t, nil)
-	if _, err := NewDefinedNode(node.RemoteNode(), node.ID()); err == nil {
+	if _, err := newNode(node.Node, node.Id); err == nil {
 		t.Errorf("Unexpected success creating a node with invalid id")
 	}
 }

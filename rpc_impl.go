@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	emptyRemote = &gmajpb.RemoteNode{}
+	emptyRemote = &gmajpb.Node{}
 	mt          = &gmajpb.MT{}
 )
 
 // GetPredecessor gets the predecessor on the node.
-func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode, error) {
+func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.Node, error) {
 	node.predMtx.RLock()
 	pred := node.Predecessor
 	node.predMtx.RUnlock()
@@ -27,7 +27,7 @@ func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNod
 }
 
 // GetSuccessor gets the successor on the node..
-func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode, error) {
+func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.Node, error) {
 	node.succMtx.RLock()
 	succ := node.Successor
 	node.succMtx.RUnlock()
@@ -41,7 +41,7 @@ func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.RemoteNode,
 
 // SetPredecessor sets the predecessor on the node.
 func (node *Node) SetPredecessor(
-	ctx context.Context, pred *gmajpb.RemoteNode,
+	ctx context.Context, pred *gmajpb.Node,
 ) (*gmajpb.MT, error) {
 	node.predMtx.Lock()
 	node.Predecessor = pred
@@ -52,7 +52,7 @@ func (node *Node) SetPredecessor(
 
 // SetSuccessor sets the successor on the node.
 func (node *Node) SetSuccessor(
-	ctx context.Context, succ *gmajpb.RemoteNode,
+	ctx context.Context, succ *gmajpb.Node,
 ) (*gmajpb.MT, error) {
 	node.succMtx.Lock()
 	node.Successor = succ
@@ -63,12 +63,8 @@ func (node *Node) SetSuccessor(
 
 // Notify is called when remoteNode thinks it's our predecessor.
 func (node *Node) Notify(
-	ctx context.Context, remoteNode *gmajpb.RemoteNode,
+	ctx context.Context, remoteNode *gmajpb.Node,
 ) (*gmajpb.MT, error) {
-	if remoteNode == nil {
-		return mt, errors.New("remoteNode cannot be nil")
-	}
-
 	node.notify(remoteNode)
 
 	// If node.Predecessor is nil at this point, we were trying to notify
@@ -76,18 +72,18 @@ func (node *Node) Notify(
 	// was correctly updated.
 	node.predMtx.Lock()
 	defer node.predMtx.Unlock()
-	if node.Predecessor != nil && !IDsEqual(node.Predecessor.Id, remoteNode.Id) {
+	if node.Predecessor != nil && !idsEqual(node.Predecessor.Id, remoteNode.Id) {
 		return mt, errors.New("remoteNode is not node's predecessor")
 	}
 
 	return mt, nil
 }
 
-// ClosestPrecedingFinger will find the closes preceding entry in the finger
+// ClosestPrecedingFinger will find the closest preceding entry in the finger
 // table based on the id.
 func (node *Node) ClosestPrecedingFinger(
 	ctx context.Context, id *gmajpb.ID,
-) (*gmajpb.RemoteNode, error) {
+) (*gmajpb.Node, error) {
 	remoteNode := node.closestPrecedingFinger(id.Id)
 	if remoteNode == nil {
 		return emptyRemote, errors.New("MT node closest preceding finger")
@@ -99,14 +95,14 @@ func (node *Node) ClosestPrecedingFinger(
 // FindSuccessor finds the successor, error if nil.
 func (node *Node) FindSuccessor(
 	ctx context.Context, id *gmajpb.ID,
-) (*gmajpb.RemoteNode, error) {
+) (*gmajpb.Node, error) {
 	succ, err := node.findSuccessor(id.Id)
 	if err != nil {
 		return emptyRemote, err
 	}
 
 	if succ == nil {
-		return emptyRemote, errors.New("Node does not have a successor")
+		return emptyRemote, errors.New("cannot find successor")
 	}
 
 	return succ, nil
@@ -125,7 +121,7 @@ func (node *Node) Get(ctx context.Context, key *gmajpb.Key) (*gmajpb.Val, error)
 // Put stores a key value pair on the node.
 func (node *Node) Put(ctx context.Context, keyVal *gmajpb.KeyVal) (*gmajpb.MT, error) {
 	if err := node.put(keyVal); err != nil {
-		return mt, err
+		return nil, err
 	}
 
 	return mt, nil
@@ -134,10 +130,10 @@ func (node *Node) Put(ctx context.Context, keyVal *gmajpb.KeyVal) (*gmajpb.MT, e
 // TransferKeys transfers the appropriate keys on this node
 // to the remote node specified in the request.
 func (node *Node) TransferKeys(
-	ctx context.Context, tmsg *gmajpb.TransferMsg,
+	ctx context.Context, tmsg *gmajpb.TransferKeysReq,
 ) (*gmajpb.MT, error) {
 	if err := node.transferKeys(tmsg); err != nil {
-		return mt, err
+		return nil, err
 	}
 
 	return mt, nil

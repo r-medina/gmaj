@@ -2,6 +2,7 @@ package gmaj
 
 import (
 	"errors"
+	"time"
 
 	"github.com/r-medina/gmaj/gmajpb"
 
@@ -10,21 +11,12 @@ import (
 )
 
 //
-// RPC connection map cache
-//
-
-type clientConn struct {
-	client gmajpb.NodeClient
-	conn   *grpc.ClientConn
-}
-
-//
 // Chord Node RPC API
 //
 
 // GetPredecessorRPC gets the predecessor ID of a remote node.
-func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.RemoteNode, error) {
-	client, err := node.getNodeClient(remoteNode)
+func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +25,8 @@ func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.Remo
 }
 
 // GetSuccessorRPC the successor ID of a remote node.
-func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.RemoteNode, error) {
-	client, err := node.getNodeClient(remoteNode)
+func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +35,8 @@ func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.RemoteNode) (*gmajpb.Remote
 }
 
 // SetPredecessorRPC noties a remote node that we believe we are its predecessor.
-func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.RemoteNode) error {
-	client, err := node.getNodeClient(remoteNode)
+func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.Node) error {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
 	}
@@ -54,8 +46,8 @@ func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.RemoteNode) erro
 }
 
 // SetSuccessorRPC sets the successor ID of a remote node.
-func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.RemoteNode) error {
-	client, err := node.getNodeClient(remoteNode)
+func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.Node) error {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
 	}
@@ -65,8 +57,8 @@ func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.RemoteNode) error 
 }
 
 // NotifyRPC notifies a remote node that pred is its predecessor.
-func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.RemoteNode) error {
-	client, err := node.getNodeClient(remoteNode)
+func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.Node) error {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
 	}
@@ -78,9 +70,9 @@ func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.RemoteNode) error {
 // ClosestPrecedingFingerRPC finds the closest preceding finger from a remote
 // node for an ID.
 func (node *Node) ClosestPrecedingFingerRPC(
-	remoteNode *gmajpb.RemoteNode, id []byte,
-) (*gmajpb.RemoteNode, error) {
-	client, err := node.getNodeClient(remoteNode)
+	remoteNode *gmajpb.Node, id []byte,
+) (*gmajpb.Node, error) {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +82,9 @@ func (node *Node) ClosestPrecedingFingerRPC(
 
 // FindSuccessorRPC finds the successor node of a given ID in the entire ring.
 func (node *Node) FindSuccessorRPC(
-	remoteNode *gmajpb.RemoteNode, id []byte,
-) (*gmajpb.RemoteNode, error) {
-	client, err := node.getNodeClient(remoteNode)
+	remoteNode *gmajpb.Node, id []byte,
+) (*gmajpb.Node, error) {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +97,8 @@ func (node *Node) FindSuccessorRPC(
 //
 
 // GetRPC gets a value from a remote node's datastore for a given key.
-func (node *Node) GetRPC(remoteNode *gmajpb.RemoteNode, key string) (string, error) {
-	client, err := node.getNodeClient(remoteNode)
+func (node *Node) GetRPC(remoteNode *gmajpb.Node, key string) (string, error) {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return "", err
 	}
@@ -120,8 +112,8 @@ func (node *Node) GetRPC(remoteNode *gmajpb.RemoteNode, key string) (string, err
 }
 
 // PutRPC puts a key/value into a datastore on a remote node.
-func (node *Node) PutRPC(remoteNode *gmajpb.RemoteNode, key string, val string) error {
-	client, err := node.getNodeClient(remoteNode)
+func (node *Node) PutRPC(remoteNode *gmajpb.Node, key string, val string) error {
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
 	}
@@ -134,48 +126,64 @@ func (node *Node) PutRPC(remoteNode *gmajpb.RemoteNode, key string, val string) 
 // between (node.Id : predId]. This should trigger the successor node to
 // transfer the relevant keys back to node
 func (node *Node) TransferKeysRPC(
-	remoteNode *gmajpb.RemoteNode, fromID []byte, toNode *gmajpb.RemoteNode,
+	remoteNode *gmajpb.Node, fromID []byte, toNode *gmajpb.Node,
 ) error {
-	client, err := node.getNodeClient(remoteNode)
+	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	_, err = client.TransferKeys(context.Background(), &gmajpb.TransferMsg{FromID: fromID, ToNode: toNode})
+	_, err = client.TransferKeys(
+		context.Background(), &gmajpb.TransferKeysReq{FromId: fromID, ToNode: toNode},
+	)
 	return err
 }
 
-// getNodeClient is a helper function to make a call to a remote node.
-func (node *Node) getNodeClient(
-	remoteNode *gmajpb.RemoteNode,
-) (gmajpb.NodeClient, error) {
+//
+// RPC connection map cache
+//
+
+type clientConn struct {
+	client gmajpb.ChordClient
+	conn   *grpc.ClientConn
+}
+
+// getChordClient is a helper function to make a call to a remote node.
+func (node *Node) getChordClient(
+	remoteNode *gmajpb.Node,
+) (gmajpb.ChordClient, error) {
 	// Dial the server if we don't already have a connection to it
-	remoteNodeAddr := remoteNode.Addr
+	addr := remoteNode.Addr
 	node.connMtx.RLock()
-	cc, ok := node.clientConns[remoteNodeAddr]
+	cc, ok := node.clientConns[addr]
 	node.connMtx.RUnlock()
 	if ok {
 		return cc.client, nil
 	}
 
-	conn, err := grpc.Dial(
-		remoteNodeAddr,
-		// only way to do per-node credentials I can think of...
-		append(cfg.DialOptions, node.dialOpts...)...,
-	)
+	conn, err := dial(addr)
 	if err != nil {
 		return nil, err
 	}
 
-	client := gmajpb.NewNodeClient(conn)
+	client := gmajpb.NewChordClient(conn)
 	cc = &clientConn{client, conn}
 	node.connMtx.Lock()
 	if node.clientConns == nil {
 		node.connMtx.Unlock()
 		return nil, errors.New("must instantiate node before using")
 	}
-	node.clientConns[remoteNodeAddr] = cc
+	node.clientConns[addr] = cc
 	node.connMtx.Unlock()
 
 	return client, nil
+}
+
+func dial(addr string) (*grpc.ClientConn, error) {
+	return grpc.Dial(addr, append(
+		config.DialOptions,
+		grpc.WithBlock(),
+		grpc.WithTimeout(5*time.Second),
+		grpc.FailOnNonTempDialError(true),
+	)...)
 }
