@@ -42,8 +42,6 @@ type Node struct {
 
 type nodeOptions struct {
 	id         []byte
-	addr       string
-	parent     *gmajpb.Node
 	serverOpts []grpc.ServerOption
 	dialOpts   []grpc.DialOption
 }
@@ -55,20 +53,6 @@ type NodeOption func(o *nodeOptions)
 func withID(id []byte) NodeOption {
 	return func(o *nodeOptions) {
 		o.id = id
-	}
-}
-
-// WithAddress specifies an address that the node will listen on.
-func WithAddress(addr string) NodeOption {
-	return func(o *nodeOptions) {
-		o.addr = addr
-	}
-}
-
-// WithParent specifies a parent to which the node should connect.
-func WithParent(node *gmajpb.Node) NodeOption {
-	return func(o *nodeOptions) {
-		o.parent = node
 	}
 }
 
@@ -91,7 +75,7 @@ var _ gmajpb.ChordServer = (*Node)(nil)
 
 // NewNode creates a Chord node with a pre-defined ID (useful for
 // testing) if a non-nil id is provided.
-func NewNode(opts ...NodeOption) (*Node, error) {
+func NewNode(parent *gmajpb.Node, addr string, opts ...NodeOption) (*Node, error) {
 	node := &Node{
 		Node:        new(gmajpb.Node),
 		shutdownCh:  make(chan struct{}),
@@ -103,9 +87,8 @@ func NewNode(opts ...NodeOption) (*Node, error) {
 	}
 
 	id := node.opts.id
-	parent := node.opts.parent
 
-	lis, err := net.Listen("tcp", node.opts.addr)
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}

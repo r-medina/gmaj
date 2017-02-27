@@ -58,7 +58,7 @@ func TestFixNextFinger(t *testing.T) {
 		t.Fatalf("Finger entry does not point to itself.")
 	}
 
-	node1, err := NewNode()
+	node1, err := NewNode(nil, "")
 	if err != nil {
 		t.Fatal(err)
 	}
