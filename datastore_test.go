@@ -29,7 +29,7 @@ func TestGetNoDataStore(t *testing.T) {
 func TestGetNonExistentKey(t *testing.T) {
 	t.Parallel()
 
-	node, err := NewNode()
+	node, err := NewNode(nil, "")
 	if err != nil {
 		t.Fatalf("unexpected error making node: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestGetNonExistentKey(t *testing.T) {
 func TestGetKey(t *testing.T) {
 	t.Parallel()
 
-	node, err := NewNode()
+	node, err := NewNode(nil, "")
 	if err != nil {
 		t.Fatalf("unexpected error making node: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestPutNoDataStore(t *testing.T) {
 func TestPutModifyExistingKey(t *testing.T) {
 	t.Parallel()
 
-	node, err := NewNode()
+	node, err := NewNode(nil, "")
 	if err != nil {
 		t.Fatalf("unexpected error making node: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestPutModifyExistingKey(t *testing.T) {
 func TestPutKey(t *testing.T) {
 	t.Parallel()
 
-	node, err := NewNode()
+	node, err := NewNode(nil, "")
 	if err != nil {
 		t.Fatalf("unexpected error making new node: %v", err)
 	}
