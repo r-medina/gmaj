@@ -8,7 +8,7 @@ before_install:
   - go get github.com/golang/lint/golint
 
 install:
-  - go get -d ./... && go build ./...
+  - go get -d ./...
 
 script: ./scripts/test.sh
 

@@ -74,7 +74,7 @@ func (node *Node) locate(key string) (*gmajpb.Node, error) {
 // from its successor.
 func (node *Node) obtainNewKeys() error {
 	node.succMtx.RLock()
-	succ := node.Successor
+	succ := node.successor
 	node.succMtx.RUnlock()
 
 	// TODO(asubiotto): Test the case where there are two nodes floating around

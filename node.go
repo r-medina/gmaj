@@ -23,10 +23,10 @@ type Node struct {
 
 	grpcs *grpc.Server
 
-	Predecessor *gmajpb.Node // This Node's predecessor
+	predecessor *gmajpb.Node // This Node's predecessor
 	predMtx     sync.RWMutex
 
-	Successor *gmajpb.Node // This Node's successor
+	successor *gmajpb.Node // This Node's successor
 	succMtx   sync.RWMutex
 
 	shutdownCh chan struct{}
@@ -178,7 +178,7 @@ func (node *Node) join(other *gmajpb.Node) error {
 		return err
 	}
 	node.succMtx.Lock()
-	node.Successor = succ
+	node.successor = succ
 	node.succMtx.Unlock()
 
 	return node.obtainNewKeys()
@@ -188,7 +188,7 @@ func (node *Node) join(other *gmajpb.Node) error {
 // This is an implementation of the psuedocode from figure 7 of chord paper.
 func (node *Node) stabilize() {
 	node.succMtx.RLock()
-	_succ := node.Successor
+	_succ := node.successor
 	if _succ == nil {
 		node.succMtx.RUnlock()
 		return
@@ -206,7 +206,7 @@ func (node *Node) stabilize() {
 	// still want to notify them of our belief that we are its predecessor.
 	if succ.Id != nil && between(succ.Id, node.Id, _succ.Id) {
 		node.succMtx.Lock()
-		node.Successor = succ
+		node.successor = succ
 		node.succMtx.Unlock()
 	}
 
@@ -225,22 +225,22 @@ func (node *Node) notify(remoteNode *gmajpb.Node) {
 	// We only update predecessor if it is not us (i.e. we are only one in the
 	// circle) since we are guaranteed that each node's successor link is
 	// correct.
-	if !(node.Predecessor == nil ||
-		between(remoteNode.Id, node.Predecessor.Id, node.Id)) {
+	if !(node.predecessor == nil ||
+		between(remoteNode.Id, node.predecessor.Id, node.Id)) {
 		return
 	}
 
 	var prevID []byte
-	if node.Predecessor != nil {
-		prevID = node.Predecessor.Id
+	if node.predecessor != nil {
+		prevID = node.predecessor.Id
 	}
 
 	// Update predecessor and transfer keys.
-	node.Predecessor = remoteNode
+	node.predecessor = remoteNode
 
-	if between(node.Predecessor.Id, prevID, node.Id) {
+	if between(node.predecessor.Id, prevID, node.Id) {
 		node.transferKeys(
-			&gmajpb.TransferKeysReq{FromId: prevID, ToNode: node.Predecessor},
+			&gmajpb.TransferKeysReq{FromId: prevID, ToNode: node.predecessor},
 		)
 	}
 }
@@ -275,7 +275,7 @@ func (node *Node) findSuccessor(id []byte) (*gmajpb.Node, error) {
 func (node *Node) findPredecessor(id []byte) (*gmajpb.Node, error) {
 	pred := node.Node
 	node.succMtx.Lock()
-	succ := node.Successor
+	succ := node.successor
 	node.succMtx.Unlock()
 	if succ == nil {
 		return pred, nil
@@ -348,12 +348,12 @@ func (node *Node) Shutdown() {
 	// ring).
 	node.succMtx.RLock()
 	node.predMtx.Lock()
-	pred := node.Predecessor
-	succ := node.Successor
+	pred := node.predecessor
+	succ := node.successor
 	node.predMtx.Unlock()
 	node.succMtx.RUnlock()
 
-	if node.Addr != node.Successor.Addr {
+	if node.Addr != node.successor.Addr {
 		_ = node.transferKeys(&gmajpb.TransferKeysReq{
 			FromId: pred.Id,
 			ToNode: succ,
@@ -380,14 +380,14 @@ func (node *Node) String() string {
 	var pred []byte
 
 	node.succMtx.RLock()
-	if node.Successor != nil {
-		succ = node.Successor.Id
+	if node.successor != nil {
+		succ = node.successor.Id
 	}
 	node.succMtx.RUnlock()
 
 	node.predMtx.RLock()
-	if node.Predecessor != nil {
-		pred = node.Predecessor.Id
+	if node.predecessor != nil {
+		pred = node.predecessor.Id
 	}
 	node.predMtx.RUnlock()
 
