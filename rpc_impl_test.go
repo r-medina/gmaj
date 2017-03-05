@@ -62,15 +62,15 @@ func TestNotifySimpleCorrect(t *testing.T) {
 
 	// Manually stabilize the predecessor pointers.
 	node1.predMtx.Lock()
-	node1.Predecessor = node3.Node
+	node1.predecessor = node3.Node
 	node1.predMtx.Unlock()
 
 	node2.predMtx.Lock()
-	node2.Predecessor = node1.Node
+	node2.predecessor = node1.Node
 	node2.predMtx.Unlock()
 
 	node3.predMtx.Lock()
-	node3.Predecessor = node2.Node
+	node3.predecessor = node2.Node
 	node3.predMtx.Unlock()
 
 	if err := node1.NotifyRPC(node1.Node, node3.Node); err != nil {
@@ -90,15 +90,15 @@ func TestNotifySimpleIncorrect(t *testing.T) {
 
 	// Manually stabilize the predecessor pointers.
 	node1.predMtx.Lock()
-	node1.Predecessor = node3.Node
+	node1.predecessor = node3.Node
 	node1.predMtx.Unlock()
 
 	node2.predMtx.Lock()
-	node2.Predecessor = node1.Node
+	node2.predecessor = node1.Node
 	node2.predMtx.Unlock()
 
 	node3.predMtx.Lock()
-	node3.Predecessor = node2.Node
+	node3.predecessor = node2.Node
 	node3.predMtx.Unlock()
 
 	if err := node2.NotifyRPC(node2.Node, node3.Node); err == nil {

@@ -16,7 +16,7 @@ var (
 // GetPredecessor gets the predecessor on the node.
 func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.Node, error) {
 	node.predMtx.RLock()
-	pred := node.Predecessor
+	pred := node.predecessor
 	node.predMtx.RUnlock()
 
 	if pred == nil {
@@ -29,7 +29,7 @@ func (node *Node) GetPredecessor(context.Context, *gmajpb.MT) (*gmajpb.Node, err
 // GetSuccessor gets the successor on the node..
 func (node *Node) GetSuccessor(context.Context, *gmajpb.MT) (*gmajpb.Node, error) {
 	node.succMtx.RLock()
-	succ := node.Successor
+	succ := node.successor
 	node.succMtx.RUnlock()
 
 	if succ == nil {
@@ -44,7 +44,7 @@ func (node *Node) SetPredecessor(
 	ctx context.Context, pred *gmajpb.Node,
 ) (*gmajpb.MT, error) {
 	node.predMtx.Lock()
-	node.Predecessor = pred
+	node.predecessor = pred
 	node.predMtx.Unlock()
 
 	return mt, nil
@@ -55,7 +55,7 @@ func (node *Node) SetSuccessor(
 	ctx context.Context, succ *gmajpb.Node,
 ) (*gmajpb.MT, error) {
 	node.succMtx.Lock()
-	node.Successor = succ
+	node.successor = succ
 	node.succMtx.Unlock()
 
 	return mt, nil
@@ -72,7 +72,7 @@ func (node *Node) Notify(
 	// was correctly updated.
 	node.predMtx.Lock()
 	defer node.predMtx.Unlock()
-	if node.Predecessor != nil && !idsEqual(node.Predecessor.Id, remoteNode.Id) {
+	if node.predecessor != nil && !idsEqual(node.predecessor.Id, remoteNode.Id) {
 		return mt, errors.New("remoteNode is not node's predecessor")
 	}
 
