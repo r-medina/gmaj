@@ -42,6 +42,7 @@ type Node struct {
 }
 
 var _ gmajpb.ChordServer = (*Node)(nil)
+var _ gmajpb.GMajServer = (*Node)(nil)
 
 type nodeOptions struct {
 	id         []byte
@@ -52,8 +53,8 @@ type nodeOptions struct {
 // NodeOption is a function that customizes a Node.
 type NodeOption func(o *nodeOptions)
 
-// withID  sets a custom ID on the nodee. Useful for testing.
-func withID(id []byte) NodeOption {
+// WithID  sets a custom ID on the nodee. Useful for testing.
+func WithID(id []byte) NodeOption {
 	return func(o *nodeOptions) {
 		o.id = id
 	}
@@ -96,6 +97,7 @@ func NewNode(parent *gmajpb.Node, addr string, opts ...NodeOption) (*Node, error
 
 	node.grpcs = grpc.NewServer(node.opts.serverOpts...)
 	gmajpb.RegisterChordServer(node.grpcs, node)
+	gmajpb.RegisterGMajServer(node.grpcs, node)
 
 	if id != nil {
 		if len(id) != config.IDLength {
@@ -347,19 +349,21 @@ func (node *Node) Shutdown() {
 	// Do nothing if we are our own successor (i.e. we are the only node in the
 	// ring).
 	node.succMtx.RLock()
-	node.predMtx.Lock()
+	node.predMtx.RLock()
 	pred := node.predecessor
 	succ := node.successor
-	node.predMtx.Unlock()
+	node.predMtx.RUnlock()
 	node.succMtx.RUnlock()
 
 	if node.Addr != node.successor.Addr {
-		_ = node.transferKeys(&gmajpb.TransferKeysReq{
-			FromId: pred.Id,
-			ToNode: succ,
-		})
-		_ = node.SetPredecessorRPC(succ, pred)
-		_ = node.SetSuccessorRPC(pred, succ)
+		if pred != nil {
+			_ = node.transferKeys(&gmajpb.TransferKeysReq{
+				FromId: pred.Id,
+				ToNode: succ,
+			})
+			_ = node.SetPredecessorRPC(succ, pred)
+			_ = node.SetSuccessorRPC(pred, succ)
+		}
 	}
 
 	node.connMtx.Lock()
@@ -392,6 +396,10 @@ func (node *Node) String() string {
 	node.predMtx.RUnlock()
 
 	return fmt.Sprintf(
-		"Node-%v: {succ:%v, pred:%v}", IDToString(node.Id), succ, pred,
+		"Node-%v: Address: %s {succ:%v, pred:%v} %s",
+		IDToString(node.Id), node.Addr,
+		IDToString(succ),
+		IDToString(pred),
+		node.FingerTableString(),
 	)
 }

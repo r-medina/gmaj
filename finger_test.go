@@ -101,7 +101,7 @@ func TestFingerMath(t *testing.T) {
 
 	for i, test := range tests {
 		result := fingerMath(big.NewInt(test.n).Bytes(), test.i, config.KeySize)
-		want, got := big.NewInt(test.exp).Bytes(), result
+		want, got := padID(big.NewInt(test.exp).Bytes()), result
 		if !bytes.Equal(got, want) {
 			t.Logf("running test [%02d]", i)
 			t.Fatalf("Expected %v, got %v.", test.exp, (&big.Int{}).SetBytes(result))

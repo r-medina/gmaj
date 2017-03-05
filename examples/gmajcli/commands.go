@@ -41,7 +41,7 @@ var cmds = map[string]command{
 
 	"data": func(nodes []*gmaj.Node, args ...string) (stop bool) {
 		for _, node := range nodes {
-			node.DatastoreString()
+			fmt.Println(node.DatastoreString())
 		}
 		return
 	},

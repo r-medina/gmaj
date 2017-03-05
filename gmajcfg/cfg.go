@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/grpclog"
 )
 
-const dfltKeySize = 8
+const dfltKeySize = 64
 
 // configuration errors
 var (
@@ -49,9 +49,9 @@ func (config *Config) Validate() error {
 var DefaultConfig = &Config{
 	KeySize:               dfltKeySize,
 	IDLength:              dfltKeySize / 8, // key length bytes
-	FixNextFingerInterval: 25 * time.Millisecond,
-	StabilizeInterval:     50 * time.Millisecond,
-	RetryInterval:         75 * time.Millisecond,
+	FixNextFingerInterval: 50 * time.Millisecond,
+	StabilizeInterval:     100 * time.Millisecond,
+	RetryInterval:         200 * time.Millisecond,
 	DialOptions: []grpc.DialOption{
 		grpc.WithInsecure(), // TODO(ricky): find a better way to use this for testing
 	},

@@ -26,43 +26,17 @@ func Get(node *Node, key string) (string, error) {
 		return "", errors.New("Node cannot be nil")
 	}
 
-	remoteNode, err := node.locate(key)
-	if err != nil {
-		return "", err
-	}
-
-	// TODO(asubiotto): Smart retries on not found error. Implement channel
-	// that notifies when stabilize has been called.
-
-	// Retry on error because it might be due to temporary unavailability
-	// (e.g. write happened while transferring nodes).
-	value, err := node.GetRPC(remoteNode, key)
-	if err != nil {
-		<-time.After(config.RetryInterval)
-		remoteNode, err = node.locate(key)
-		if err != nil {
-			return "", err
-		}
-
-		return node.GetRPC(remoteNode, key)
-	}
-
-	return value, nil
+	return node.get(key)
 }
 
 // Put a key/value in the datastore, provided an abitrary node in the ring.
 // This is useful for testing.
-func Put(node *Node, key string, value string) error {
+func Put(node *Node, key string, val string) error {
 	if node == nil {
 		return errors.New("Node cannot be nil")
 	}
 
-	remoteNode, err := node.locate(key)
-	if err != nil {
-		return err
-	}
-
-	return node.PutRPC(remoteNode, key, value)
+	return node.put(key, val)
 }
 
 // locate helps find the appropriate node in the ring.
@@ -94,9 +68,9 @@ func (node *Node) obtainNewKeys() error {
 // RPCs to assist with interfacing with the datastore ring
 //
 
-func (node *Node) get(key *gmajpb.Key) (string, error) {
+func (node *Node) getKey(key string) (string, error) {
 	node.dsMtx.RLock()
-	val, ok := node.datastore[key.Key]
+	val, ok := node.datastore[key]
 	node.dsMtx.RUnlock()
 	if !ok {
 		return "", errors.New("key does not exist")
@@ -105,7 +79,7 @@ func (node *Node) get(key *gmajpb.Key) (string, error) {
 	return val, nil
 }
 
-func (node *Node) put(keyVal *gmajpb.KeyVal) error {
+func (node *Node) putKeyVal(keyVal *gmajpb.KeyVal) error {
 	key := keyVal.Key
 	val := keyVal.Val
 
@@ -121,6 +95,43 @@ func (node *Node) put(keyVal *gmajpb.KeyVal) error {
 	node.dsMtx.Unlock()
 
 	return nil
+}
+
+func (node *Node) get(key string) (string, error) {
+	remoteNode, err := node.locate(key)
+	if err != nil {
+		return "", err
+	}
+
+	// TODO(asubiotto): Smart retries on not found error. Implement channel
+	// that notifies when stabilize has been called.
+
+	// Retry on error because it might be due to temporary unavailability
+	// (e.g. write happened while transferring nodes).
+	val, err := node.GetKeyRPC(remoteNode, key)
+	if err != nil {
+		<-time.After(config.RetryInterval)
+		remoteNode, err = node.locate(key)
+		if err != nil {
+			return "", err
+		}
+
+		val, err = node.GetKeyRPC(remoteNode, key)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return val, nil
+}
+
+func (node *Node) put(key, val string) error {
+	remoteNode, err := node.locate(key)
+	if err != nil {
+		return err
+	}
+
+	return node.PutKeyValRPC(remoteNode, key, val)
 }
 
 func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
@@ -139,7 +150,7 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 		// Check that the hashed_key lies in the correct range before putting
 		// the value in our predecessor.
 		if betweenRightIncl(hashedKey, tmsg.FromId, toNode.Id) {
-			if err := node.PutRPC(toNode, key, val); err != nil {
+			if err := node.PutKeyValRPC(toNode, key, val); err != nil {
 				return err
 			}
 
@@ -162,7 +173,7 @@ func (node *Node) DatastoreString() string {
 	defer node.dsMtx.RUnlock()
 
 	buf.WriteString(fmt.Sprintf(
-		"Node-%v datastore: %v\n",
+		"Node-%v datastore: %v",
 		IDToString(node.Id), node.datastore,
 	))
 

@@ -87,5 +87,5 @@ func fingerMath(n []byte, i int, m int) []byte {
 	res := &big.Int{} // res will pretty much be an accumulator
 	res.SetBytes(n).Add(res, iInt).Mod(res, mInt)
 
-	return res.Bytes()
+	return padID(res.Bytes())
 }

@@ -73,7 +73,7 @@ func (node *Node) Notify(
 	node.predMtx.Lock()
 	defer node.predMtx.Unlock()
 	if node.predecessor != nil && !idsEqual(node.predecessor.Id, remoteNode.Id) {
-		return mt, errors.New("remoteNode is not node's predecessor")
+		return nil, errors.New("gmaj: node is not predecesspr")
 	}
 
 	return mt, nil
@@ -86,7 +86,7 @@ func (node *Node) ClosestPrecedingFinger(
 ) (*gmajpb.Node, error) {
 	remoteNode := node.closestPrecedingFinger(id.Id)
 	if remoteNode == nil {
-		return emptyRemote, errors.New("MT node closest preceding finger")
+		return nil, errors.New("gmaj: no closest preceding finger")
 	}
 
 	return remoteNode, nil
@@ -102,15 +102,15 @@ func (node *Node) FindSuccessor(
 	}
 
 	if succ == nil {
-		return emptyRemote, errors.New("cannot find successor")
+		return nil, errors.New("gmaj: cannot find successor")
 	}
 
 	return succ, nil
 }
 
-// Get returns the value of the key requested at the node.
-func (node *Node) Get(ctx context.Context, key *gmajpb.Key) (*gmajpb.Val, error) {
-	val, err := node.get(key)
+// GetKey returns the value of the key requested at the node.
+func (node *Node) GetKey(ctx context.Context, key *gmajpb.Key) (*gmajpb.Val, error) {
+	val, err := node.getKey(key.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +118,9 @@ func (node *Node) Get(ctx context.Context, key *gmajpb.Key) (*gmajpb.Val, error)
 	return &gmajpb.Val{Val: val}, nil
 }
 
-// Put stores a key value pair on the node.
-func (node *Node) Put(ctx context.Context, keyVal *gmajpb.KeyVal) (*gmajpb.MT, error) {
-	if err := node.put(keyVal); err != nil {
+// PutKeyVal stores a key value pair on the node.
+func (node *Node) PutKeyVal(ctx context.Context, kv *gmajpb.KeyVal) (*gmajpb.MT, error) {
+	if err := node.putKeyVal(kv); err != nil {
 		return nil, err
 	}
 
@@ -133,6 +133,48 @@ func (node *Node) TransferKeys(
 	ctx context.Context, tmsg *gmajpb.TransferKeysReq,
 ) (*gmajpb.MT, error) {
 	if err := node.transferKeys(tmsg); err != nil {
+		return nil, err
+	}
+
+	return mt, nil
+}
+
+//
+// public API
+//
+
+// GetID returns the ID of the node.
+func (node *Node) GetID(ctx context.Context, _ *gmajpb.MT) (*gmajpb.ID, error) {
+	Log.Println("calling GetID")
+
+	return &gmajpb.ID{Id: node.Id}, nil
+}
+
+// Locate finds where a key belongs.
+func (node *Node) Locate(ctx context.Context, key *gmajpb.Key) (*gmajpb.Node, error) {
+	Log.Println("calling Locate")
+
+	return node.locate(key.Key)
+}
+
+// Get a value in the datastore, provided an abitrary node in the ring
+func (node *Node) Get(ctx context.Context, key *gmajpb.Key) (*gmajpb.Val, error) {
+	Log.Println("calling Get")
+
+	val, err := node.get(key.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gmajpb.Val{Val: val}, nil
+}
+
+// Put a key/value in the datastore, provided an abitrary node in the ring.
+// This is useful for testing.
+func (node *Node) Put(ctx context.Context, kv *gmajpb.KeyVal) (*gmajpb.MT, error) {
+	Log.Println("calling Put")
+
+	if err := node.put(kv.Key, kv.Val); err != nil {
 		return nil, err
 	}
 

@@ -57,6 +57,7 @@ func TestBetweenRightIncl(t *testing.T) {
 		{x: 384732, a: 527, b: 384732, exp: true},
 		{x: 384733, a: 527, b: 384732, exp: false},
 		{x: 527, a: 527, b: 384732, exp: false},
+		{x: 128, a: 64, b: 128, exp: true},
 
 		// wrapping around
 

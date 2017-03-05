@@ -96,14 +96,14 @@ func (node *Node) FindSuccessorRPC(
 // Datastore RPC API
 //
 
-// GetRPC gets a value from a remote node's datastore for a given key.
-func (node *Node) GetRPC(remoteNode *gmajpb.Node, key string) (string, error) {
+// GetKeyRPC gets a value from a remote node's datastore for a given key.
+func (node *Node) GetKeyRPC(remoteNode *gmajpb.Node, key string) (string, error) {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return "", err
 	}
 
-	val, err := client.Get(context.Background(), &gmajpb.Key{Key: key})
+	val, err := client.GetKey(context.Background(), &gmajpb.Key{Key: key})
 	if err != nil {
 		return "", err
 	}
@@ -111,14 +111,14 @@ func (node *Node) GetRPC(remoteNode *gmajpb.Node, key string) (string, error) {
 	return val.Val, nil
 }
 
-// PutRPC puts a key/value into a datastore on a remote node.
-func (node *Node) PutRPC(remoteNode *gmajpb.Node, key string, val string) error {
+// PutKeyValRPC puts a key/value into a datastore on a remote node.
+func (node *Node) PutKeyValRPC(remoteNode *gmajpb.Node, key string, val string) error {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
 	}
 
-	_, err = client.Put(context.Background(), &gmajpb.KeyVal{Key: key, Val: val})
+	_, err = client.PutKeyVal(context.Background(), &gmajpb.KeyVal{Key: key, Val: val})
 	return err
 }
 
@@ -161,7 +161,7 @@ func (node *Node) getChordClient(
 		return cc.client, nil
 	}
 
-	conn, err := dial(addr, node.opts.dialOpts...)
+	conn, err := Dial(addr, node.opts.dialOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,9 @@ func (node *Node) getChordClient(
 	return client, nil
 }
 
-func dial(addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+// Dial wraps grpc's dial function with settings that facilitate the
+// functionality of gmaj.
+func Dial(addr string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	return grpc.Dial(addr, append(append(
 		config.DialOptions,
 		grpc.WithBlock(),
