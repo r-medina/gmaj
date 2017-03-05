@@ -25,23 +25,26 @@ function golint {
 }
 
 info "running govet checks..."
-go vet -x ./...
+go vet ./...
 
 info "running golint checks..."
 golint
 
+info "building code..."
+go build ./...
+
 info "running tests..."
-go test -v ./...
+go test ./...
 info "done running tests"
 sleep 3
 
 info "running tests with race flag..."
-go test -v -race ./...
+go test -race ./...
 info "done running tests with race flag"
 sleep 5
 
 info "running tests with cover flag..."
 set +e
-go test -v -cover ./...
-info "done tests with cover flag"
+go test -cover ./...
+info "done running tests with cover flag"
 set -e

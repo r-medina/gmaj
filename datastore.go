@@ -6,6 +6,7 @@
 package gmaj
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/r-medina/gmaj/gmajpb"
 )
 
-var errNoDatastore = errors.New("Node does not have a datastore")
+var errNoDatastore = errors.New("gmaj: node does not have a datastore")
 
 //
 // External API Into Datastore
@@ -95,7 +96,7 @@ func (node *Node) obtainNewKeys() error {
 
 func (node *Node) get(key *gmajpb.Key) (string, error) {
 	node.dsMtx.RLock()
-	val, ok := node.dataStore[key.Key]
+	val, ok := node.datastore[key.Key]
 	node.dsMtx.RUnlock()
 	if !ok {
 		return "", errors.New("key does not exist")
@@ -109,14 +110,14 @@ func (node *Node) put(keyVal *gmajpb.KeyVal) error {
 	val := keyVal.Val
 
 	node.dsMtx.RLock()
-	_, exists := node.dataStore[key]
+	_, exists := node.datastore[key]
 	node.dsMtx.RUnlock()
 	if exists {
 		return errors.New("cannot modify an existing value")
 	}
 
 	node.dsMtx.Lock()
-	node.dataStore[key] = val
+	node.datastore[key] = val
 	node.dsMtx.Unlock()
 
 	return nil
@@ -132,7 +133,7 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 	defer node.dsMtx.Unlock()
 
 	toDelete := []string{}
-	for key, val := range node.dataStore {
+	for key, val := range node.datastore {
 		hashedKey := hashKey(key)
 
 		// Check that the hashed_key lies in the correct range before putting
@@ -147,18 +148,23 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 	}
 
 	for _, key := range toDelete {
-		delete(node.dataStore, key)
+		delete(node.datastore, key)
 	}
 
 	return nil
 }
 
-// PrintDataStore write the contents of a node's data store to stdout.
-func PrintDataStore(node *Node) {
+// DatastoreString write the contents of a node's data store to stdout.
+func (node *Node) DatastoreString() string {
+	buf := bytes.Buffer{}
+
 	node.dsMtx.RLock()
-	fmt.Printf(
+	defer node.dsMtx.RUnlock()
+
+	buf.WriteString(fmt.Sprintf(
 		"Node-%v datastore: %v\n",
-		IDToString(node.Id), node.dataStore,
-	)
-	node.dsMtx.RUnlock()
+		IDToString(node.Id), node.datastore,
+	))
+
+	return buf.String()
 }

@@ -15,8 +15,6 @@ func TestInitFingerTable(t *testing.T) {
 
 	node := createSimpleNode(t, nil)
 
-	node.initFingerTable()
-
 	if want, got := config.KeySize, len(node.fingerTable); got != want {
 		t.Fatalf("Expected finger table length %v, got %v.", want, got)
 	}
@@ -42,7 +40,8 @@ func TestFixNextFinger(t *testing.T) {
 	node1 := &Node{Node: new(gmajpb.Node)}
 	node1.Id = []byte{10}
 	node1.Addr = "localhost"
-	node1.initFingerTable()
+	node1.ftMtx.Lock()
+	node1.fingerTable = newFingerTable(node1.Node)
 	next := 1
 	next = node1.fixNextFinger(next) // shouldn't do anything because no rpc
 

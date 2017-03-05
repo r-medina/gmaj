@@ -10,6 +10,32 @@ import (
 
 type fingerTable []*fingerEntry
 
+func newFingerTable(node *gmajpb.Node) fingerTable {
+	ft := make([]*fingerEntry, config.KeySize)
+	for i := range ft {
+		ft[i] = newFingerEntry(fingerMath(node.Id, i, config.KeySize), node)
+	}
+
+	return ft
+}
+
+func (ft fingerTable) String() string {
+	var buf bytes.Buffer
+
+	buf.WriteString(fmt.Sprintf("FingerTable:"))
+
+	for _, val := range ft {
+		buf.WriteString(fmt.Sprintf(
+			"\n\t{start:%v\tnodeID:%v %v}",
+			IDToString(val.StartID),
+			IDToString(val.RemoteNode.Id),
+			val.RemoteNode.Addr,
+		))
+	}
+
+	return buf.String()
+}
+
 // fingerEntry represents a single finger table entry
 type fingerEntry struct {
 	StartID    []byte       // ID hash of (n + 2^i) mod (2^m)
@@ -21,21 +47,6 @@ func newFingerEntry(startID []byte, remoteNode *gmajpb.Node) *fingerEntry {
 	return &fingerEntry{
 		StartID:    startID,
 		RemoteNode: remoteNode,
-	}
-}
-
-// initFingerTable creates initial finger table that only points to itself.
-// The table will be fixed later.
-func (node *Node) initFingerTable() {
-	node.ftMtx.Lock()
-	defer node.ftMtx.Unlock()
-
-	node.fingerTable = make([]*fingerEntry, config.KeySize)
-	for i := range node.fingerTable {
-		node.fingerTable[i] = newFingerEntry(
-			fingerMath(node.Id, i, config.KeySize),
-			node.Node,
-		)
 	}
 }
 
@@ -57,6 +68,14 @@ func (node *Node) fixNextFinger(next int) int {
 	return (next + 1) % config.KeySize
 }
 
+// FingerTableString takes a node and converts it's finger table into a string.
+func (node *Node) FingerTableString() string {
+	node.ftMtx.RLock()
+	defer node.ftMtx.RUnlock()
+
+	return node.fingerTable.String()
+}
+
 // fingerMath does the `(n + 2^i) mod (2^m)` operation
 // needed to update finger table entries.
 func fingerMath(n []byte, i int, m int) []byte {
@@ -69,25 +88,4 @@ func fingerMath(n []byte, i int, m int) []byte {
 	res.SetBytes(n).Add(res, iInt).Mod(res, mInt)
 
 	return res.Bytes()
-}
-
-// FingerTableToString takes a node and converts it's finger table into a string.
-func FingerTableToString(node *Node) string {
-	var buf bytes.Buffer
-
-	buf.WriteString(fmt.Sprintf("[%v] FingerTable:", IDToString(node.Id)))
-
-	node.ftMtx.RLock()
-	defer node.ftMtx.RUnlock()
-
-	for _, val := range node.fingerTable {
-		buf.WriteString(fmt.Sprintf(
-			"\n\t{start:%v\tnodeID:%v %v}",
-			IDToString(val.StartID),
-			IDToString(val.RemoteNode.Id),
-			val.RemoteNode.Addr,
-		))
-	}
-
-	return buf.String()
 }
