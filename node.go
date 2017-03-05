@@ -2,6 +2,7 @@ package gmaj
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -33,12 +34,14 @@ type Node struct {
 	fingerTable fingerTable  // Finger table entries
 	ftMtx       sync.RWMutex // RWLock for finger table
 
-	dataStore map[string]string // Local datastore for this node
+	datastore map[string]string // Local datastore for this node
 	dsMtx     sync.RWMutex      // RWLock for datastore
 
 	clientConns map[string]*clientConn
 	connMtx     sync.RWMutex
 }
+
+var _ gmajpb.ChordServer = (*Node)(nil)
 
 type nodeOptions struct {
 	id         []byte
@@ -70,8 +73,6 @@ func WithGRPCDialOptions(opts ...grpc.DialOption) NodeOption {
 		o.dialOpts = opts
 	}
 }
-
-var _ gmajpb.ChordServer = (*Node)(nil)
 
 // NewNode creates a Chord node with a pre-defined ID (useful for
 // testing) if a non-nil id is provided.
@@ -105,10 +106,10 @@ func NewNode(parent *gmajpb.Node, addr string, opts ...NodeOption) (*Node, error
 		node.Id = hashKey(lis.Addr().String())
 	}
 	node.Addr = lis.Addr().String()
-	node.dataStore = make(map[string]string)
+	node.datastore = make(map[string]string)
 
 	// Populate finger table
-	node.initFingerTable()
+	node.fingerTable = newFingerTable(node.Node)
 
 	// Start RPC server
 	go node.grpcs.Serve(lis)
@@ -203,14 +204,14 @@ func (node *Node) stabilize() {
 	// If the predecessor of our successor is nil (succ), it means that our
 	// successor has not had the chance to update their predecessor pointer. We
 	// still want to notify them of our belief that we are its predecessor.
-	if succ.Id != nil && between(succ.Id, node.Id, node.Successor.Id) {
+	if succ.Id != nil && between(succ.Id, node.Id, _succ.Id) {
 		node.succMtx.Lock()
 		node.Successor = succ
 		node.succMtx.Unlock()
 	}
 
 	// TODO(r-medina): handle error (necessary?)
-	_ = node.NotifyRPC(node.Successor, node.Node)
+	_ = node.NotifyRPC(_succ, node.Node)
 
 	return
 }
@@ -369,6 +370,28 @@ func (node *Node) Shutdown() {
 	node.connMtx.Unlock()
 	node.grpcs.Stop()
 	node.dsMtx.Lock()
-	node.dataStore = nil
+	node.datastore = nil
 	node.dsMtx.Unlock()
+}
+
+// String takes a Node and generates a short semi-descriptive string.
+func (node *Node) String() string {
+	var succ []byte
+	var pred []byte
+
+	node.succMtx.RLock()
+	if node.Successor != nil {
+		succ = node.Successor.Id
+	}
+	node.succMtx.RUnlock()
+
+	node.predMtx.RLock()
+	if node.Predecessor != nil {
+		pred = node.Predecessor.Id
+	}
+	node.predMtx.RUnlock()
+
+	return fmt.Sprintf(
+		"Node-%v: {succ:%v, pred:%v}", IDToString(node.Id), succ, pred,
+	)
 }

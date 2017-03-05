@@ -8,7 +8,7 @@ import (
 	"github.com/r-medina/gmaj/gmajcfg"
 )
 
-var errSetConfig = errors.New("cannot set configuration more than once")
+var errSetConfig = errors.New("gmaj: cannot set configuration more than once")
 
 // the configuration for whole package
 var config struct {

@@ -20,14 +20,14 @@ var cmds = map[string]command{
 
 	"node": func(nodes []*gmaj.Node, args ...string) (stop bool) {
 		for _, node := range nodes {
-			fmt.Println(nodeToString(node))
+			fmt.Println(node)
 		}
 		return
 	},
 
 	"table": func(nodes []*gmaj.Node, args ...string) (stop bool) {
 		for _, node := range nodes {
-			fmt.Println(gmaj.FingerTableToString(node))
+			fmt.Printf("%s: %s\n", gmaj.IDToString(node.Id), node.FingerTableString())
 		}
 		return
 	},
@@ -41,7 +41,7 @@ var cmds = map[string]command{
 
 	"data": func(nodes []*gmaj.Node, args ...string) (stop bool) {
 		for _, node := range nodes {
-			gmaj.PrintDataStore(node)
+			node.DatastoreString()
 		}
 		return
 	},

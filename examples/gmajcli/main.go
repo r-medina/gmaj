@@ -55,9 +55,7 @@ func main() {
 	go func() {
 		<-c
 
-		for _, node := range nodes {
-			node.Shutdown()
-		}
+		shutdown(nodes)
 
 		os.Exit(1)
 	}()
@@ -112,23 +110,13 @@ loop:
 		}
 	}
 
+	shutdown(nodes)
+}
+
+func shutdown(nodes []*gmaj.Node) {
+	fmt.Println("shutting down...")
+
 	for _, node := range nodes {
 		node.Shutdown()
 	}
-}
-
-// nodeToString takes a gmaj.Node and generates a short semi-descriptive string.
-func nodeToString(node *gmaj.Node) string {
-	var succ []byte
-	var pred []byte
-	if node.Successor != nil {
-		succ = node.Successor.Id
-	}
-	if node.Predecessor != nil {
-		pred = node.Predecessor.Id
-	}
-
-	return fmt.Sprintf(
-		"Node-%v: {succ:%v, pred:%v}", gmaj.IDToString(node.Id), succ, pred,
-	)
 }

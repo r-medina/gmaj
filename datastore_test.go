@@ -38,7 +38,7 @@ func TestGetNonExistentKey(t *testing.T) {
 	}
 
 	// Make sure entry was not created.
-	if _, exists := node.dataStore["test"]; exists {
+	if _, exists := node.datastore["test"]; exists {
 		t.Fatal("Unexpected entry in node datastore")
 	}
 }
@@ -94,7 +94,7 @@ func TestPutModifyExistingKey(t *testing.T) {
 		t.Fatalf("Unexpected failure putting value: %v", err)
 	}
 
-	if _, exists := node.dataStore["test"]; !exists {
+	if _, exists := node.datastore["test"]; !exists {
 		t.Fatal("Unexpected error value not set")
 	}
 
@@ -224,7 +224,7 @@ func TestKeyTransferAfterShutdownSimple(t *testing.T) {
 
 	// stores all the data in chord
 	data := make(map[string]string)
-	for k, v := range node1.dataStore {
+	for k, v := range node1.datastore {
 		data[k] = v
 	}
 
@@ -263,20 +263,20 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 
 	// stores all the data in chord
 	data := make(map[string]string)
-	for k, v := range node1.dataStore {
+	for k, v := range node1.datastore {
 		data[k] = v
 	}
-	for k, v := range node2.dataStore {
+	for k, v := range node2.datastore {
 		data[k] = v
 	}
-	for k, v := range node3.dataStore {
+	for k, v := range node3.datastore {
 		data[k] = v
 	}
 
 	node1.Shutdown()
 
 	// makes sure node1 transfered its keys
-	if l := len(node1.dataStore); l > 0 {
+	if l := len(node1.datastore); l > 0 {
 		t.Fatalf("node1 should not have anything left in its data, but there are %v items\n", l)
 	}
 
@@ -295,7 +295,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 	node2.Shutdown()
 
 	// makes sure node3 transfered its keys
-	if l := len(node2.dataStore); l > 0 {
+	if l := len(node2.datastore); l > 0 {
 		t.Fatalf("node2 should not have anything left in its data, but there are %v items\n", l)
 	}
 
@@ -319,7 +319,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 	node3.Shutdown()
 
 	// makes sure node3 transfered its keys
-	if l := len(node3.dataStore); l > 0 {
+	if l := len(node3.datastore); l > 0 {
 		t.Fatalf(
 			"node3 should not have anything left in its data, but there are %v items\n", l,
 		)
