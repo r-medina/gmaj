@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package chord;
+
+import "github.com/r-medina/gmaj/gmajpb/gmaj.proto";
+
+// Chord is the service for inter-node communication.
+// This has all the RPC functions needed to maintain
+// a Chord cluster.
+service Chord {
+    // GetPredecessor returns the node believed to be the current predecessor.
+    rpc GetPredecessor(gmajpb.MT) returns (gmajpb.Node);
+    // GetSuccessor returns the node believed to be the current successor.
+    rpc GetSuccessor(gmajpb.MT) returns (gmajpb.Node);
+    // SetPredecessor sets Node as the predeccessor. This function does not do
+    // any validation.
+    rpc SetPredecessor(gmajpb.Node) returns (gmajpb.MT);
+    // SetPredecessor sets Node as the successor. This function does not do any
+    // validation.
+    rpc SetSuccessor(gmajpb.Node) returns (gmajpb.MT);
+    // Notify notifies Chord that Node thinks it is our predecessor. This has
+    // the potential to initiate the transferring of keys.
+    rpc Notify(gmajpb.Node) returns (gmajpb.MT);
+    // ClosestPrecedingFinger returns the entry of the finger table that
+    // precedes ID but is closest to it.
+    rpc ClosestPrecedingFinger(gmajpb.ID) returns (gmajpb.Node);
+    // FindSuccessor finds the node the succedes ID. May initiate RPC calls to
+    // other nodes.
+    rpc FindSuccessor(gmajpb.ID) returns (gmajpb.Node);
+    // GetKey returns the value in node for the given key;
+    rpc GetKey(gmajpb.Key) returns (gmajpb.Val);
+    // PutKeyVal writes a key value pair to the node.
+    rpc PutKeyVal(gmajpb.KeyVal) returns (gmajpb.MT);
+    // TransferKeys tells a node to transfer keys in a specified range to
+    // another node.
+    rpc TransferKeys(gmajpb.TransferKeysReq) returns (gmajpb.MT);
+}

@@ -1,8 +1,6 @@
 package gmaj
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestSimple(t *testing.T) {
 	t.Parallel()
