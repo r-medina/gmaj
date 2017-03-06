@@ -6,8 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/r-medina/gmaj/gmajcfg"
 	"github.com/r-medina/gmaj/gmajpb"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -16,6 +18,21 @@ var testTimeout = 1000 * time.Millisecond
 func init() {
 	grpclog.SetLogger(log.New(ioutil.Discard, "", 0))
 
+	cfg := gmajcfg.Config{
+		KeySize:               8,
+		IDLength:              1, // key length bytes
+		FixNextFingerInterval: 25 * time.Millisecond,
+		StabilizeInterval:     50 * time.Millisecond,
+		RetryInterval:         75 * time.Millisecond,
+		DialOptions: []grpc.DialOption{
+			grpc.WithInsecure(),
+		},
+		Log: log.New(ioutil.Discard, "", 0),
+	}
+
+	if err := Init(&cfg); err != nil {
+		panic(err)
+	}
 }
 
 // Generally useful testing helper functions. Creates three successive nodes
@@ -37,7 +54,7 @@ func createSimpleNode(t *testing.T, ring *gmajpb.Node) *Node {
 }
 
 func createDefinedNode(t *testing.T, ring *gmajpb.Node, id []byte) *Node {
-	node, err := NewNode(ring, "", withID(id))
+	node, err := NewNode(ring, "", WithID(id))
 	if err != nil {
 		t.Fatalf("Unable to create node, received error:%v", err)
 	}

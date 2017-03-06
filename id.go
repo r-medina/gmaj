@@ -7,6 +7,7 @@ package gmaj
 import (
 	"bytes"
 	"crypto/sha1"
+	"errors"
 	"math/big"
 )
 
@@ -17,6 +18,30 @@ func hashKey(key string) []byte {
 	v := h.Sum(nil)
 
 	return v[:config.IDLength]
+}
+
+// NewID takes a string representing
+func NewID(str string) ([]byte, error) {
+	i := big.NewInt(0)
+	i.SetString(str, 0)
+	id := i.Bytes()
+	if len(id) == 0 {
+		return nil, errors.New("gmaj: invalid ID")
+	}
+
+	return padID(id), nil
+}
+
+func padID(id []byte) []byte {
+	n := config.IDLength - len(id)
+	if n < 0 {
+		n = 0
+	}
+
+	_id := make([]byte, n)
+	id = append(_id, id...)
+
+	return id[:config.IDLength]
 }
 
 // IDToString converts a []byte to a big.Int string, useful for debugging/logging.

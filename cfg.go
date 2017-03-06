@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/r-medina/gmaj/gmajcfg"
+
+	"google.golang.org/grpc/grpclog"
 )
 
 var errSetConfig = errors.New("gmaj: cannot set configuration more than once")
@@ -17,6 +19,9 @@ var config struct {
 	max *big.Int
 	o   sync.Once
 }
+
+// Log allows clients to log with logger in configuration.
+var Log grpclog.Logger
 
 func init() {
 	mustInit(gmajcfg.DefaultConfig)
@@ -34,6 +39,8 @@ func Init(cfg *gmajcfg.Config) error {
 
 		config.Config = *cfg
 		config.max = getMax()
+		Log = config.Log
+
 	})
 
 	return err
@@ -46,6 +53,7 @@ func mustInit(cfg *gmajcfg.Config) {
 
 	config.Config = *cfg
 	config.max = getMax()
+	Log = config.Log
 }
 
 func getMax() *big.Int {

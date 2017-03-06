@@ -20,7 +20,7 @@ func TestGetNoDataStore(t *testing.T) {
 	t.Parallel()
 
 	node := &Node{Node: new(gmajpb.Node)}
-	_, err := node.get(new(gmajpb.Key))
+	_, err := node.getKey("")
 	if err == nil {
 		t.Fatal("Unexpected success getting value from nil datastore")
 	}
@@ -151,7 +151,7 @@ func TestTransferKeys(t *testing.T) {
 	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
-	if val, err := node2.get(&gmajpb.Key{Key: key}); err != nil {
+	if val, err := node2.getKey(key); err != nil {
 		t.Fatalf("Unexpected error getting value from node2: %v", err)
 	} else if val != "spacetravel!" {
 		t.Fatalf("Unexpected value")
@@ -199,7 +199,7 @@ func TestTransferKeysAvailability(t *testing.T) {
 	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
-	if val, err := node2.get(&gmajpb.Key{Key: key}); err != nil {
+	if val, err := node2.getKey(key); err != nil {
 		t.Fatalf("Unexpected error getting value from node2:%v\n", err)
 	} else if val != "spacetravel!" {
 		t.Fatalf("Unexpected value")
