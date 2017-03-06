@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/r-medina/gmaj/gmajpb"
+	"github.com/r-medina/gmaj/internal/chord"
 
 	"google.golang.org/grpc"
 )
@@ -41,7 +42,7 @@ type Node struct {
 	connMtx     sync.RWMutex
 }
 
-var _ gmajpb.ChordServer = (*Node)(nil)
+var _ chord.ChordServer = (*Node)(nil)
 var _ gmajpb.GMajServer = (*Node)(nil)
 
 type nodeOptions struct {
@@ -96,7 +97,7 @@ func NewNode(parent *gmajpb.Node, addr string, opts ...NodeOption) (*Node, error
 	}
 
 	node.grpcs = grpc.NewServer(node.opts.serverOpts...)
-	gmajpb.RegisterChordServer(node.grpcs, node)
+	chord.RegisterChordServer(node.grpcs, node)
 	gmajpb.RegisterGMajServer(node.grpcs, node)
 
 	if id != nil {

@@ -1,49 +1,6 @@
-// compile with:
-//
-//   protoc *.proto --go_out=plugins=grpc:.
-
 syntax = "proto3";
 
 package gmajpb;
-
-// Chord is the service for inter-node communication.
-// This has all the RPC functions needed to maintain
-// a Chord cluster.
-service Chord {
-    // GetPredecessor returns the node believed to be the current predecessor.
-    rpc GetPredecessor(MT) returns (Node);
-    // GetSuccessor returns the node believed to be the current successor.
-    rpc GetSuccessor(MT) returns (Node);
-    // SetPredecessor sets Node as the predeccessor. This function does not do
-    // any validation.
-    rpc SetPredecessor(Node) returns (MT);
-    // SetPredecessor sets Node as the successor. This function does not do any
-    // validation.
-    rpc SetSuccessor(Node) returns (MT);
-    // Notify notifies Chord that Node thinks it is our predecessor. This has
-    // the potential to initiate the transferring of keys.
-    rpc Notify(Node) returns (MT);
-    // ClosestPrecedingFinger returns the entry of the finger table that
-    // precedes ID but is closest to it.
-    rpc ClosestPrecedingFinger(ID) returns (Node);
-    // FindSuccessor finds the node the succedes ID. May initiate RPC calls to
-    // other nodes.
-    rpc FindSuccessor(ID) returns (Node);
-    // GetKey returns the value in node for the given key;
-    rpc GetKey(Key) returns (Val);
-    // PutKeyVal writes a key value pair to the node.
-    rpc PutKeyVal(KeyVal) returns (MT);
-    // TransferKeys tells a node to transfer keys in a specified range to
-    // another node.
-    rpc TransferKeys(TransferKeysReq) returns (MT);
-
-    // for public api. See GMaj comments
-    
-    rpc GetID(MT) returns (ID);
-    rpc Locate(Key) returns (Node);
-    rpc Get(Key) returns (Val);
-    rpc Put(KeyVal) returns (MT);
-}
 
 // GMaj is the public API for the chord DHT.
 service GMaj {

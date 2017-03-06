@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/r-medina/gmaj/gmajpb"
+	"github.com/r-medina/gmaj/internal/chord"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -144,14 +145,14 @@ func (node *Node) TransferKeysRPC(
 //
 
 type clientConn struct {
-	client gmajpb.ChordClient
+	client chord.ChordClient
 	conn   *grpc.ClientConn
 }
 
 // getChordClient is a helper function to make a call to a remote node.
 func (node *Node) getChordClient(
 	remoteNode *gmajpb.Node,
-) (gmajpb.ChordClient, error) {
+) (chord.ChordClient, error) {
 	// Dial the server if we don't already have a connection to it
 	addr := remoteNode.Addr
 	node.connMtx.RLock()
@@ -166,7 +167,7 @@ func (node *Node) getChordClient(
 		return nil, err
 	}
 
-	client := gmajpb.NewChordClient(conn)
+	client := chord.NewChordClient(conn)
 	cc = &clientConn{client, conn}
 	node.connMtx.Lock()
 	if node.clientConns == nil {
