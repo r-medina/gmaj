@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/r-medina/gmaj"
 	"github.com/r-medina/gmaj/gmajpb"
@@ -73,12 +72,13 @@ func main() {
 
 	log.Printf("%+v", node)
 
-	go func() {
-		for range time.Tick(2 * time.Second) {
-			log.Println(node)
-			log.Println(node.DatastoreString())
-		}
-	}()
+	// TODO: make a debug mode
+	// go func() {
+	// 	for range time.Tick(2 * time.Second) {
+	// 		log.Println(node)
+	// 		log.Println(node.DatastoreString())
+	// 	}
+	// }()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
