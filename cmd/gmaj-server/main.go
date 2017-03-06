@@ -58,6 +58,8 @@ func main() {
 
 	var opts []gmaj.NodeOption
 
+	opts = append(opts, gmaj.WithAddress(config.addr))
+
 	if config.id != "" {
 		id, err := gmaj.NewID(config.id)
 		if err != nil {
@@ -66,7 +68,7 @@ func main() {
 		opts = append(opts, gmaj.WithID(id))
 	}
 
-	node, err := gmaj.NewNode(parent, config.addr, opts...)
+	node, err := gmaj.NewNode(parent, opts...)
 	if err != nil {
 		log.Fatalf("faild to instantiate node: %v", err)
 	}
