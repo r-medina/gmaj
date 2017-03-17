@@ -121,7 +121,7 @@ func NewNode(parent *gmajpb.Node, addr string, opts ...NodeOption) (*Node, error
 	var joinNode *gmajpb.Node
 	if parent != nil {
 		// Ask if our id exists on the ring.
-		remoteNode, err := node.FindSuccessorRPC(parent, node.Id)
+		remoteNode, err := node.findSuccessorRPC(parent, node.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +176,7 @@ func NewNode(parent *gmajpb.Node, addr string, opts ...NodeOption) (*Node, error
 // join allows this node to join an existing ring that a remote node
 // is a part of (i.e., other).
 func (node *Node) join(other *gmajpb.Node) error {
-	succ, err := node.FindSuccessorRPC(other, node.Id)
+	succ, err := node.findSuccessorRPC(other, node.Id)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (node *Node) stabilize() {
 	}
 	node.succMtx.RUnlock()
 
-	succ, err := node.GetPredecessorRPC(_succ)
+	succ, err := node.getPredecessorRPC(_succ)
 	if succ == nil || err != nil {
 		// TODO: handle failed client
 		return
@@ -214,7 +214,7 @@ func (node *Node) stabilize() {
 	}
 
 	// TODO(r-medina): handle error (necessary?)
-	_ = node.NotifyRPC(_succ, node.Node)
+	_ = node.notifyRPC(_succ, node.Node)
 
 	return
 }
@@ -261,7 +261,7 @@ func (node *Node) findSuccessor(id []byte) (*gmajpb.Node, error) {
 		return node.Node, nil
 	}
 
-	succ, err := node.GetSuccessorRPC(pred)
+	succ, err := node.getSuccessorRPC(pred)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +290,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.Node, error) {
 	}
 
 	// TODO(asubiotto): Handle error?
-	succ, _ = node.GetSuccessorRPC(pred)
+	succ, _ = node.getSuccessorRPC(pred)
 
 	if succ == nil || succ.Addr == "" {
 		return pred, nil
@@ -298,7 +298,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.Node, error) {
 
 	for !betweenRightIncl(id, pred.Id, succ.Id) {
 		var err error
-		pred, err = node.ClosestPrecedingFingerRPC(succ, id)
+		pred, err = node.closestPrecedingFingerRPC(succ, id)
 		if err != nil {
 			return nil, err
 		}
@@ -307,7 +307,7 @@ func (node *Node) findPredecessor(id []byte) (*gmajpb.Node, error) {
 			return node.Node, nil
 		}
 
-		succ, err = node.GetSuccessorRPC(pred)
+		succ, err = node.getSuccessorRPC(pred)
 		if err != nil {
 			return nil, err
 		}
@@ -362,8 +362,8 @@ func (node *Node) Shutdown() {
 				FromId: pred.Id,
 				ToNode: succ,
 			})
-			_ = node.SetPredecessorRPC(succ, pred)
-			_ = node.SetSuccessorRPC(pred, succ)
+			_ = node.setPredecessorRPC(succ, pred)
+			_ = node.setSuccessorRPC(pred, succ)
 		}
 	}
 
