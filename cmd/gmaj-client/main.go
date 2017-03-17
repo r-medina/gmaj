@@ -15,8 +15,14 @@ var config struct {
 	parentAddr string
 	client     gmajpb.GMajClient
 
-	key string
-	val string
+	put struct {
+		key string
+		val string
+	}
+
+	get struct {
+		key string
+	}
 }
 
 var (
@@ -27,11 +33,11 @@ func init() {
 	app.Flag("addr", "address of node to contact").StringVar(&config.parentAddr)
 
 	put := app.Command("put", "Put a key").PreAction(getClient).Action(putKeyVal)
-	put.Arg("key", "The key to put").StringVar(&config.key)
-	put.Arg("value", "The key to put").StringVar(&config.val)
+	put.Arg("key", "The key to put").StringVar(&config.put.key)
+	put.Arg("value", "The key to put").StringVar(&config.put.val)
 
 	get := app.Command("get", "Get a key").PreAction(getClient).Action(getKey)
-	get.Arg("key", "The key to get").StringVar(&config.key)
+	get.Arg("key", "The key to get").StringVar(&config.get.key)
 }
 
 func main() {
@@ -42,9 +48,7 @@ func main() {
 
 func getClient(*kingpin.ParseContext) error {
 	conn, err := gmaj.Dial(config.parentAddr)
-	if err != nil {
-		app.Fatalf("dialing parent %v failed: %v\n", config.parentAddr, err)
-	}
+	app.FatalIfError(err, "dialing parent %v failed: %v\n", config.parentAddr, err)
 
 	config.client = gmajpb.NewGMajClient(conn)
 
@@ -52,13 +56,11 @@ func getClient(*kingpin.ParseContext) error {
 }
 
 func putKeyVal(*kingpin.ParseContext) error {
-	key := config.key
-	val := config.val
+	key := config.put.key
+	val := config.put.val
 
 	_, err := config.client.Put(context.Background(), &gmajpb.KeyVal{Key: key, Val: val})
-	if err != nil {
-		app.Fatalf("putting key %q value %q failed: %v\n", key, val, err)
-	}
+	app.FatalIfError(err, "putting key %q value %q failed: %v\n", key, val, err)
 
 	fmt.Println("put succeded")
 
@@ -66,11 +68,9 @@ func putKeyVal(*kingpin.ParseContext) error {
 }
 
 func getKey(*kingpin.ParseContext) error {
-	key := config.key
+	key := config.get.key
 	val, err := config.client.Get(context.Background(), &gmajpb.Key{Key: key})
-	if err != nil {
-		app.Fatalf("getting key %q failed: %v\n", key, err)
-	}
+	app.FatalIfError(err, "getting key %q failed: %v\n", key, err)
 
 	fmt.Printf("%s: %s\n", key, val.Val)
 
