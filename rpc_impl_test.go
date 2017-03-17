@@ -73,12 +73,12 @@ func TestNotifySimpleCorrect(t *testing.T) {
 	node3.predecessor = node2.Node
 	node3.predMtx.Unlock()
 
-	if err := node1.NotifyRPC(node1.Node, node3.Node); err != nil {
+	if err := node1.notifyRPC(node1.Node, node3.Node); err != nil {
 		t.Fatalf("Unexpected error notifying node: %v", err)
 	}
 
 	// Tests that notify wraps around correctly.
-	if err := node3.NotifyRPC(node3.Node, node2.Node); err != nil {
+	if err := node3.notifyRPC(node3.Node, node2.Node); err != nil {
 		t.Fatalf("Unexpected error notifying node: %v", err)
 	}
 }
@@ -101,15 +101,15 @@ func TestNotifySimpleIncorrect(t *testing.T) {
 	node3.predecessor = node2.Node
 	node3.predMtx.Unlock()
 
-	if err := node2.NotifyRPC(node2.Node, node3.Node); err == nil {
+	if err := node2.notifyRPC(node2.Node, node3.Node); err == nil {
 		t.Fatalf("Unexpected success notifying node1")
 	}
 
-	if err := node3.NotifyRPC(node3.Node, node1.Node); err == nil {
+	if err := node3.notifyRPC(node3.Node, node1.Node); err == nil {
 		t.Fatalf("Unexpected success notifying node2")
 	}
 
-	if err := node1.NotifyRPC(node1.Node, node2.Node); err == nil {
+	if err := node1.notifyRPC(node1.Node, node2.Node); err == nil {
 		t.Fatalf("Unexpected success notifying node3")
 	}
 }
@@ -200,7 +200,7 @@ func TestClosestPrecedingFingerComplicated(t *testing.T) {
 // Helper for GetSuccessor tests. Issues an RPC to check if node2 is a successor
 // of node1.
 func assertSuccessor(t *testing.T, node1, node2 *Node) {
-	if remoteNode, err := node1.GetSuccessorRPC(node1.Node); err != nil {
+	if remoteNode, err := node1.getSuccessorRPC(node1.Node); err != nil {
 		t.Fatalf("Unexpected error:%v", err)
 	} else if remoteNode.Addr != node2.Addr {
 		t.Fatalf(
@@ -214,7 +214,7 @@ func assertSuccessor(t *testing.T, node1, node2 *Node) {
 // Helper for FindSuccessor tests. Issues an RPC to check that node is id's
 // successor.
 func assertSuccessorID(t *testing.T, id byte, node *Node) {
-	if remoteNode, err := node.FindSuccessorRPC(node.Node, []byte{id}); err != nil {
+	if remoteNode, err := node.findSuccessorRPC(node.Node, []byte{id}); err != nil {
 		t.Fatalf("Unexpected error:%v", err)
 	} else if remoteNode.Addr != node.Addr {
 		t.Fatalf("Unexpected successor. Expected %v got %v",
@@ -226,7 +226,7 @@ func assertSuccessorID(t *testing.T, id byte, node *Node) {
 // Helper for closest preceding finger. Asserts that closest is the closest
 // preceding finger to id according to node.
 func assertClosest(t *testing.T, node, closest *Node, id byte) {
-	remoteNode, err := node.ClosestPrecedingFingerRPC(node.Node, []byte{id})
+	remoteNode, err := node.closestPrecedingFingerRPC(node.Node, []byte{id})
 	if err != nil {
 		t.Fatalf("Unexpected error while getting closest:%v", err)
 	} else if !idsEqual(remoteNode.Id, closest.Id) {

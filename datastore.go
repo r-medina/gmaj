@@ -54,12 +54,12 @@ func (node *Node) obtainNewKeys() error {
 	// TODO(asubiotto): Test the case where there are two nodes floating around
 	// that need keys.
 	// Assume new predecessor has been set.
-	prevPredecessor, err := node.GetPredecessorRPC(succ)
+	prevPredecessor, err := node.getPredecessorRPC(succ)
 	if err != nil {
 		return err
 	}
 
-	return node.TransferKeysRPC(
+	return node.transferKeysRPC(
 		succ, node.Id, prevPredecessor,
 	) // implicitly correct even when prevPredecessor.ID == nil
 }
@@ -108,7 +108,7 @@ func (node *Node) get(key string) (string, error) {
 
 	// Retry on error because it might be due to temporary unavailability
 	// (e.g. write happened while transferring nodes).
-	val, err := node.GetKeyRPC(remoteNode, key)
+	val, err := node.getKeyRPC(remoteNode, key)
 	if err != nil {
 		<-time.After(config.RetryInterval)
 		remoteNode, err = node.locate(key)
@@ -116,7 +116,7 @@ func (node *Node) get(key string) (string, error) {
 			return "", err
 		}
 
-		val, err = node.GetKeyRPC(remoteNode, key)
+		val, err = node.getKeyRPC(remoteNode, key)
 		if err != nil {
 			return "", err
 		}
@@ -131,7 +131,7 @@ func (node *Node) put(key, val string) error {
 		return err
 	}
 
-	return node.PutKeyValRPC(remoteNode, key, val)
+	return node.putKeyValRPC(remoteNode, key, val)
 }
 
 func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
@@ -150,7 +150,7 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 		// Check that the hashed_key lies in the correct range before putting
 		// the value in our predecessor.
 		if betweenRightIncl(hashedKey, tmsg.FromId, toNode.Id) {
-			if err := node.PutKeyValRPC(toNode, key, val); err != nil {
+			if err := node.putKeyValRPC(toNode, key, val); err != nil {
 				return err
 			}
 

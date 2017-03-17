@@ -15,8 +15,8 @@ import (
 // Chord Node RPC API
 //
 
-// GetPredecessorRPC gets the predecessor ID of a remote node.
-func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
+// getPredecessorRPC gets the predecessor ID of a remote node.
+func (node *Node) getPredecessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return nil, err
@@ -25,8 +25,8 @@ func (node *Node) GetPredecessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, erro
 	return client.GetPredecessor(context.Background(), mt)
 }
 
-// GetSuccessorRPC the successor ID of a remote node.
-func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
+// getSuccessorRPC the successor ID of a remote node.
+func (node *Node) getSuccessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error) {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return nil, err
@@ -35,8 +35,8 @@ func (node *Node) GetSuccessorRPC(remoteNode *gmajpb.Node) (*gmajpb.Node, error)
 	return client.GetSuccessor(context.Background(), mt)
 }
 
-// SetPredecessorRPC noties a remote node that we believe we are its predecessor.
-func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.Node) error {
+// setPredecessorRPC noties a remote node that we believe we are its predecessor.
+func (node *Node) setPredecessorRPC(remoteNode, newPred *gmajpb.Node) error {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
@@ -46,8 +46,8 @@ func (node *Node) SetPredecessorRPC(remoteNode, newPred *gmajpb.Node) error {
 	return err
 }
 
-// SetSuccessorRPC sets the successor ID of a remote node.
-func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.Node) error {
+// setSuccessorRPC sets the successor ID of a remote node.
+func (node *Node) setSuccessorRPC(remoteNode, newSucc *gmajpb.Node) error {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
@@ -57,8 +57,8 @@ func (node *Node) SetSuccessorRPC(remoteNode, newSucc *gmajpb.Node) error {
 	return err
 }
 
-// NotifyRPC notifies a remote node that pred is its predecessor.
-func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.Node) error {
+// notifyRPC notifies a remote node that pred is its predecessor.
+func (node *Node) notifyRPC(remoteNode, pred *gmajpb.Node) error {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
@@ -68,9 +68,9 @@ func (node *Node) NotifyRPC(remoteNode, pred *gmajpb.Node) error {
 	return err
 }
 
-// ClosestPrecedingFingerRPC finds the closest preceding finger from a remote
+// closestPrecedingFingerRPC finds the closest preceding finger from a remote
 // node for an ID.
-func (node *Node) ClosestPrecedingFingerRPC(
+func (node *Node) closestPrecedingFingerRPC(
 	remoteNode *gmajpb.Node, id []byte,
 ) (*gmajpb.Node, error) {
 	client, err := node.getChordClient(remoteNode)
@@ -81,8 +81,8 @@ func (node *Node) ClosestPrecedingFingerRPC(
 	return client.ClosestPrecedingFinger(context.Background(), &gmajpb.ID{Id: id})
 }
 
-// FindSuccessorRPC finds the successor node of a given ID in the entire ring.
-func (node *Node) FindSuccessorRPC(
+// findSuccessorRPC finds the successor node of a given ID in the entire ring.
+func (node *Node) findSuccessorRPC(
 	remoteNode *gmajpb.Node, id []byte,
 ) (*gmajpb.Node, error) {
 	client, err := node.getChordClient(remoteNode)
@@ -97,8 +97,8 @@ func (node *Node) FindSuccessorRPC(
 // Datastore RPC API
 //
 
-// GetKeyRPC gets a value from a remote node's datastore for a given key.
-func (node *Node) GetKeyRPC(remoteNode *gmajpb.Node, key string) (string, error) {
+// getKeyRPC gets a value from a remote node's datastore for a given key.
+func (node *Node) getKeyRPC(remoteNode *gmajpb.Node, key string) (string, error) {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return "", err
@@ -112,8 +112,8 @@ func (node *Node) GetKeyRPC(remoteNode *gmajpb.Node, key string) (string, error)
 	return val.Val, nil
 }
 
-// PutKeyValRPC puts a key/value into a datastore on a remote node.
-func (node *Node) PutKeyValRPC(remoteNode *gmajpb.Node, key string, val string) error {
+// putKeyValRPC puts a key/value into a datastore on a remote node.
+func (node *Node) putKeyValRPC(remoteNode *gmajpb.Node, key string, val string) error {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err
@@ -123,10 +123,10 @@ func (node *Node) PutKeyValRPC(remoteNode *gmajpb.Node, key string, val string) 
 	return err
 }
 
-// TransferKeysRPC informs a successor node that we should now take care of IDs
+// transferKeysRPC informs a successor node that we should now take care of IDs
 // between (node.Id : predId]. This should trigger the successor node to
 // transfer the relevant keys back to node
-func (node *Node) TransferKeysRPC(
+func (node *Node) transferKeysRPC(
 	remoteNode *gmajpb.Node, fromID []byte, toNode *gmajpb.Node,
 ) error {
 	client, err := node.getChordClient(remoteNode)
