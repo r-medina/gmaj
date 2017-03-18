@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/r-medina/gmaj"
 	"github.com/r-medina/gmaj/gmajpb"
@@ -16,6 +17,7 @@ var config struct {
 	id         string
 	addr       string
 	parentAddr string
+	debug      bool
 }
 
 var (
@@ -28,6 +30,7 @@ func init() {
 	app.Flag("id", "custom ID to use instead of than hashing address").StringVar(&config.id)
 	app.Flag("addr", "address on which to start server").StringVar(&config.addr)
 	app.Flag("parent-addr", "address of node to join").StringVar(&config.parentAddr)
+	app.Flag("debug", "whether debug mode is on").Default("false").BoolVar(&config.debug)
 
 	log = gmaj.Log
 }
@@ -74,13 +77,14 @@ func main() {
 
 	log.Printf("%+v", node)
 
-	// TODO: make a debug mode
-	// go func() {
-	// 	for range time.Tick(2 * time.Second) {
-	// 		log.Println(node)
-	// 		log.Println(node.DatastoreString())
-	// 	}
-	// }()
+	if config.debug {
+		go func() {
+			for range time.Tick(2 * time.Second) {
+				log.Println(node)
+				log.Println(node.DatastoreString())
+			}
+		}()
+	}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
