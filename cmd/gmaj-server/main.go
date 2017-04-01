@@ -21,7 +21,7 @@ var config struct {
 }
 
 var (
-	app = kingpin.New("gmaj-server", "GMaj server daemon").DefaultEnvars()
+	app = kingpin.New("gmaj-server", "GMaj server daemon").Action(runServer).DefaultEnvars()
 
 	log grpclog.Logger
 )
@@ -39,7 +39,9 @@ func main() {
 	if _, err := app.Parse(os.Args[1:]); err != nil {
 		log.Fatalf("command line parsing failed: %v", err)
 	}
+}
 
+func runServer(_ *kingpin.ParseContext) error {
 	var parent *gmajpb.Node
 	if config.parentAddr != "" {
 		conn, err := gmaj.Dial(config.parentAddr)
@@ -48,7 +50,7 @@ func main() {
 		}
 
 		client := gmajpb.NewGMajClient(conn)
-		id, err := client.GetID(context.Background(), &gmajpb.MT{})
+		id, err := client.GetID(context.Background(), &gmajpb.GetIDRequest{})
 		_ = conn.Close()
 		if err != nil {
 			log.Fatalf("getting parent ID failed: %v", err)
@@ -94,5 +96,5 @@ func main() {
 	log.Println("shutting down")
 	node.Shutdown()
 
-	log.Fatal("done")
+	return nil
 }

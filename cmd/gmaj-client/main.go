@@ -42,7 +42,7 @@ func init() {
 
 func main() {
 	if _, err := app.Parse(os.Args[1:]); err != nil {
-		app.Fatalf("command line parsing failed: %v", err)
+		app.FatalUsage("command line parsing failed: %v", err)
 	}
 }
 
@@ -59,7 +59,7 @@ func putKeyVal(*kingpin.ParseContext) error {
 	key := config.put.key
 	val := config.put.val
 
-	_, err := config.client.Put(context.Background(), &gmajpb.KeyVal{Key: key, Val: val})
+	_, err := config.client.Put(context.Background(), &gmajpb.PutRequest{Key: key, Value: val})
 	app.FatalIfError(err, "putting key %q value %q failed: %v\n", key, val, err)
 
 	fmt.Println("put succeded")
@@ -69,10 +69,10 @@ func putKeyVal(*kingpin.ParseContext) error {
 
 func getKey(*kingpin.ParseContext) error {
 	key := config.get.key
-	val, err := config.client.Get(context.Background(), &gmajpb.Key{Key: key})
+	resp, err := config.client.Get(context.Background(), &gmajpb.GetRequest{Key: key})
 	app.FatalIfError(err, "getting key %q failed: %v\n", key, err)
 
-	fmt.Printf("%s: %s\n", key, val.Val)
+	fmt.Printf("%s: %s\n", key, resp.Value)
 
 	return nil
 }
