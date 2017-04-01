@@ -1,6 +1,7 @@
 package gmaj
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -50,7 +51,7 @@ func TestGetKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error making node: %v", err)
 	}
-	if err := Put(node, "test", "value"); err != nil {
+	if err := Put(node, "test", []byte("value")); err != nil {
 		t.Fatalf("Unexpected error putting value: %v", err)
 	}
 
@@ -59,7 +60,7 @@ func TestGetKey(t *testing.T) {
 		t.Fatalf("Unexpected error getting value: %v", err)
 	}
 
-	if value != "value" {
+	if !reflect.DeepEqual(value, []byte("value")) {
 		t.Fatalf("Unexpected value returned. Expected 'value' got %q", value)
 	}
 }
@@ -67,7 +68,7 @@ func TestGetKey(t *testing.T) {
 func TestPutNilNode(t *testing.T) {
 	t.Parallel()
 
-	err := Put(nil, "", "")
+	err := Put(nil, "", nil)
 	if err == nil {
 		t.Fatal("Unexpected success putting value in nil node")
 	}
@@ -77,7 +78,7 @@ func TestPutNoDataStore(t *testing.T) {
 	t.Parallel()
 
 	node := &Node{Node: new(gmajpb.Node)}
-	err := Put(node, "", "")
+	err := Put(node, "", nil)
 	if err == nil {
 		t.Fatal("Unexpected success putting value in nil datastore")
 	}
@@ -90,7 +91,7 @@ func TestPutModifyExistingKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error making node: %v", err)
 	}
-	if err := Put(node, "test", "value"); err != nil {
+	if err := Put(node, "test", []byte("value")); err != nil {
 		t.Fatalf("Unexpected failure putting value: %v", err)
 	}
 
@@ -98,12 +99,12 @@ func TestPutModifyExistingKey(t *testing.T) {
 		t.Fatal("Unexpected error value not set")
 	}
 
-	if err = Put(node, "test", "value2"); err == nil {
+	if err = Put(node, "test", []byte("value2")); err == nil {
 		t.Fatal("Unexpected success modifying immutable key")
 	}
 
 	// Make sure value was not modified.
-	if value, _ := Get(node, "test"); value == "value2" {
+	if value, _ := Get(node, "test"); reflect.DeepEqual(value, []byte("value2")) {
 		t.Fatal("Unexpected entry in node datastore")
 	}
 }
@@ -116,7 +117,7 @@ func TestPutKey(t *testing.T) {
 		t.Fatalf("unexpected error making new node: %v", err)
 	}
 
-	key, want := "test", "value"
+	key, want := "test", []byte("value")
 	if err := Put(node, key, want); err != nil {
 		t.Fatalf("Unexpected error putting value %q with key %q: %v", want, key, err)
 	}
@@ -126,7 +127,7 @@ func TestPutKey(t *testing.T) {
 		t.Fatalf("unexpected error getting value with key %q: %v", key, err)
 	}
 
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("expected %q, got %q", want, got)
 	}
 }
@@ -139,7 +140,8 @@ func TestTransferKeys(t *testing.T) {
 	// Make node that will be successor to hashed_key.
 	hashedKey[0] += 2
 	node1 := createDefinedNode(t, nil, hashedKey)
-	if err := Put(node1, key, "spacetravel!"); err != nil {
+	want := []byte("spacetravel!")
+	if err := Put(node1, key, want); err != nil {
 		t.Fatalf("Unexpected error putting value: %v", err)
 	}
 
@@ -151,9 +153,9 @@ func TestTransferKeys(t *testing.T) {
 	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
-	if val, err := node2.getKey(key); err != nil {
+	if got, err := node2.getKey(key); err != nil {
 		t.Fatalf("Unexpected error getting value from node2: %v", err)
-	} else if val != "spacetravel!" {
+	} else if !reflect.DeepEqual(got, want) {
 		t.Fatalf("Unexpected value")
 	}
 }
@@ -166,7 +168,8 @@ func TestTransferKeysAvailability(t *testing.T) {
 	// Make node that will be successor to hashed_key.
 	hashedKey[0] += 2
 	node1 := createDefinedNode(t, nil, hashedKey)
-	if err := Put(node1, key, "spacetravel!"); err != nil {
+	want := []byte("spacetravel!")
+	if err := Put(node1, key, want); err != nil {
 		t.Fatalf("Unexpected error putting value:%v\n", err)
 	}
 
@@ -179,11 +182,11 @@ func TestTransferKeysAvailability(t *testing.T) {
 			case <-done:
 				return
 			default:
-				value, err := Get(node1, key)
+				got, err := Get(node1, key)
 				if err != nil {
 					t.Fatalf("Unexpected error checking key availability: %v\n", err)
 					return
-				} else if value != "spacetravel!" {
+				} else if !reflect.DeepEqual(got, want) {
 					t.Fatalf("Unexpected value")
 					return
 				}
@@ -199,9 +202,9 @@ func TestTransferKeysAvailability(t *testing.T) {
 	<-time.After(testTimeout)
 
 	// Make sure that "spacetravel!" is in node2.
-	if val, err := node2.getKey(key); err != nil {
+	if got, err := node2.getKey(key); err != nil {
 		t.Fatalf("Unexpected error getting value from node2:%v\n", err)
-	} else if val != "spacetravel!" {
+	} else if !reflect.DeepEqual(got, want) {
 		t.Fatalf("Unexpected value")
 	}
 	<-time.After(testTimeout)
@@ -214,16 +217,16 @@ func TestKeyTransferAfterShutdownSimple(t *testing.T) {
 
 	node1 := createSimpleNode(t, nil)
 
-	Put(node1, "1", "1")
-	Put(node1, "2", "2")
-	Put(node1, "3", "3")
-	Put(node1, "4", "4")
-	Put(node1, "5", "5")
-	Put(node1, "6", "6")
-	Put(node1, "7", "7")
+	Put(node1, "1", []byte("1"))
+	Put(node1, "2", []byte("2"))
+	Put(node1, "3", []byte("3"))
+	Put(node1, "4", []byte("4"))
+	Put(node1, "5", []byte("5"))
+	Put(node1, "6", []byte("6"))
+	Put(node1, "7", []byte("7"))
 
 	// stores all the data in chord
-	data := make(map[string]string)
+	data := make(map[string][]byte)
 	for k, v := range node1.datastore {
 		data[k] = v
 	}
@@ -238,7 +241,7 @@ func TestKeyTransferAfterShutdownSimple(t *testing.T) {
 			t.Fatalf("Unexpected error getting value from node2 getting key %v: %v\n", k, err)
 		}
 
-		if vRet != vExp {
+		if !reflect.DeepEqual(vRet, vExp) {
 			t.Fatalf("Unexpected return value. Expected %v, got %v\n", vExp, vRet)
 		}
 	}
@@ -253,16 +256,16 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 
 	<-time.After(testTimeout << 1)
 
-	_ = Put(node1, "a", "1")
-	_ = Put(node1, "b", "2")
-	_ = Put(node1, "c", "3")
-	_ = Put(node1, "d", "4")
-	_ = Put(node2, "e", "5")
-	_ = Put(node2, "f", "6")
-	_ = Put(node3, "g", "7")
+	_ = Put(node1, "a", []byte("1"))
+	_ = Put(node1, "b", []byte("2"))
+	_ = Put(node1, "c", []byte("3"))
+	_ = Put(node1, "d", []byte("4"))
+	_ = Put(node2, "e", []byte("5"))
+	_ = Put(node2, "f", []byte("6"))
+	_ = Put(node3, "g", []byte("7"))
 
 	// stores all the data in chord
-	data := make(map[string]string)
+	data := make(map[string][]byte)
 	for k, v := range node1.datastore {
 		data[k] = v
 	}
@@ -287,7 +290,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 			t.Fatalf("Unexpected error getting value from node2: %v\n", err)
 		}
 
-		if vRet != vExp {
+		if !reflect.DeepEqual(vRet, vExp) {
 			t.Fatalf("Unexpected return value. Expected %v, got %v\n", vExp, vRet)
 		}
 	}
@@ -306,7 +309,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 			t.Fatalf("Unexpected error getting value from node3: %v\n", err)
 		}
 
-		if vRet != vExp {
+		if !reflect.DeepEqual(vRet, vExp) {
 			t.Fatalf("Unexpected return value. Expected %v, got %v\n", vExp, vRet)
 		}
 	}
@@ -332,7 +335,7 @@ func TestKeyTransferAfterShutdown(t *testing.T) {
 			t.Fatalf("Unexpected error getting value from node4: %v\n", err)
 		}
 
-		if vRet != vExp {
+		if !reflect.DeepEqual(vRet, vExp) {
 			t.Fatalf("Unexpected return value. Expected %v, got %v\n", vExp, vRet)
 		}
 	}

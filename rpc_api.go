@@ -98,22 +98,22 @@ func (node *Node) findSuccessorRPC(
 //
 
 // getKeyRPC gets a value from a remote node's datastore for a given key.
-func (node *Node) getKeyRPC(remoteNode *gmajpb.Node, key string) (string, error) {
+func (node *Node) getKeyRPC(remoteNode *gmajpb.Node, key string) ([]byte, error) {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	val, err := client.GetKey(context.Background(), &gmajpb.Key{Key: key})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	return val.Val, nil
 }
 
 // putKeyValRPC puts a key/value into a datastore on a remote node.
-func (node *Node) putKeyValRPC(remoteNode *gmajpb.Node, key string, val string) error {
+func (node *Node) putKeyValRPC(remoteNode *gmajpb.Node, key string, val []byte) error {
 	client, err := node.getChordClient(remoteNode)
 	if err != nil {
 		return err

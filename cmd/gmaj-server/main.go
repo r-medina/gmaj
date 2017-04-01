@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"time"
@@ -18,10 +20,12 @@ var config struct {
 	addr       string
 	parentAddr string
 	debug      bool
+	pprofAddr  string
 }
 
 var (
-	app = kingpin.New("gmaj-server", "GMaj server daemon").Action(runServer).DefaultEnvars()
+	app = kingpin.New("gmaj-server", "GMaj server daemon").
+		PreAction(startPprof).Action(runServer).DefaultEnvars()
 
 	log grpclog.Logger
 )
@@ -31,6 +35,7 @@ func init() {
 	app.Flag("addr", "address on which to start server").StringVar(&config.addr)
 	app.Flag("parent-addr", "address of node to join").StringVar(&config.parentAddr)
 	app.Flag("debug", "whether debug mode is on").Default("false").BoolVar(&config.debug)
+	app.Flag("pprof-addr", "address for running pprof tools").StringVar(&config.pprofAddr)
 
 	log = gmaj.Log
 }
@@ -39,6 +44,7 @@ func main() {
 	if _, err := app.Parse(os.Args[1:]); err != nil {
 		log.Fatalf("command line parsing failed: %v", err)
 	}
+
 }
 
 func runServer(_ *kingpin.ParseContext) error {
@@ -81,7 +87,7 @@ func runServer(_ *kingpin.ParseContext) error {
 
 	if config.debug {
 		go func() {
-			for range time.Tick(2 * time.Second) {
+			for range time.Tick(5 * time.Second) {
 				log.Println(node)
 				log.Println(node.DatastoreString())
 			}
@@ -95,6 +101,19 @@ func runServer(_ *kingpin.ParseContext) error {
 
 	log.Println("shutting down")
 	node.Shutdown()
+
+	return nil
+}
+
+func startPprof(_ *kingpin.ParseContext) error {
+	if config.pprofAddr == "" {
+		return nil
+	}
+
+	log.Printf("running pprof server on %s", config.pprofAddr)
+	go func() {
+		log.Println(http.ListenAndServe(config.pprofAddr, nil))
+	}()
 
 	return nil
 }

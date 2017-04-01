@@ -35,7 +35,7 @@ type Node struct {
 	fingerTable fingerTable  // Finger table entries
 	ftMtx       sync.RWMutex // RWLock for finger table
 
-	datastore map[string]string // Local datastore for this node
+	datastore map[string][]byte // Local datastore for this node
 	dsMtx     sync.RWMutex      // RWLock for datastore
 
 	clientConns map[string]*clientConn
@@ -118,7 +118,7 @@ func NewNode(parent *gmajpb.Node, opts ...NodeOption) (*Node, error) {
 		node.Id = hashKey(lis.Addr().String())
 	}
 	node.Addr = lis.Addr().String()
-	node.datastore = make(map[string]string)
+	node.datastore = make(map[string][]byte)
 
 	// Populate finger table
 	node.fingerTable = newFingerTable(node.Node)
@@ -380,11 +380,9 @@ func (node *Node) Shutdown() {
 	for _, cc := range node.clientConns {
 		cc.conn.Close()
 	}
-	node.clientConns = nil
 	node.connMtx.Unlock()
 	node.grpcs.Stop()
 	node.dsMtx.Lock()
-	node.datastore = nil
 	node.dsMtx.Unlock()
 }
 
@@ -406,10 +404,9 @@ func (node *Node) String() string {
 	node.predMtx.RUnlock()
 
 	return fmt.Sprintf(
-		"Node-%v: Address: %s {succ:%v, pred:%v} %s",
+		"Node-%v: Address: %s {succ:%v, pred:%v}",
 		IDToString(node.Id), node.Addr,
 		IDToString(succ),
 		IDToString(pred),
-		node.FingerTableString(),
 	)
 }
