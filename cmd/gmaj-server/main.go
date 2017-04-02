@@ -44,7 +44,6 @@ func main() {
 	if _, err := app.Parse(os.Args[1:]); err != nil {
 		log.Fatalf("command line parsing failed: %v", err)
 	}
-
 }
 
 func runServer(_ *kingpin.ParseContext) error {

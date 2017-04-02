@@ -132,7 +132,7 @@ func (node *Node) PutKeyVal(ctx context.Context, kv *gmajpb.KeyVal) (*gmajpb.MT,
 func (node *Node) TransferKeys(
 	ctx context.Context, tmsg *gmajpb.TransferKeysReq,
 ) (*gmajpb.MT, error) {
-	if err := node.transferKeys(tmsg); err != nil {
+	if err := node.transferKeys(tmsg.FromId, tmsg.ToNode); err != nil {
 		return nil, err
 	}
 

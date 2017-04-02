@@ -135,7 +135,10 @@ func TestPutKey(t *testing.T) {
 func TestTransferKeys(t *testing.T) {
 	t.Parallel()
 	key := "myKey"
-	hashedKey := hashKey(key)
+	hashedKey, err := hashKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error hashing key: %v", err)
+	}
 
 	// Make node that will be successor to hashed_key.
 	hashedKey[0] += 2
@@ -146,7 +149,10 @@ func TestTransferKeys(t *testing.T) {
 	}
 
 	// Make node that should get the key transferred to it.
-	hashedKey = hashKey(key)
+	hashedKey, err = hashKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error hashing key: %v", err)
+	}
 	hashedKey[0]++
 	node2 := createDefinedNode(t, node1.Node, hashedKey)
 
@@ -163,7 +169,10 @@ func TestTransferKeys(t *testing.T) {
 func TestTransferKeysAvailability(t *testing.T) {
 	// Tests that key stays available during transfer.
 	key := "myKey"
-	hashedKey := hashKey(key)
+	hashedKey, err := hashKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error hashing key: %v", err)
+	}
 
 	// Make node that will be successor to hashed_key.
 	hashedKey[0] += 2
@@ -195,7 +204,11 @@ func TestTransferKeysAvailability(t *testing.T) {
 	}()
 
 	// Make node that should get the key transferred to it.
-	hashedKey = hashKey(key)
+	hashedKey, err = hashKey(key)
+	if err != nil {
+		t.Fatalf("unexpected error hashing key: %v", err)
+	}
+
 	hashedKey[0]++
 	node2 := createDefinedNode(t, node1.Node, hashedKey)
 

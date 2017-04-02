@@ -115,7 +115,11 @@ func NewNode(parent *gmajpb.Node, opts ...NodeOption) (*Node, error) {
 		}
 		node.Id = id
 	} else {
-		node.Id = hashKey(lis.Addr().String())
+		id, err := hashKey(lis.Addr().String())
+		if err != nil {
+			return nil, err
+		}
+		node.Id = id
 	}
 	node.Addr = lis.Addr().String()
 	node.datastore = make(map[string][]byte)
@@ -251,9 +255,7 @@ func (node *Node) notify(remoteNode *gmajpb.Node) {
 	node.predecessor = remoteNode
 
 	if between(node.predecessor.Id, prevID, node.Id) {
-		node.transferKeys(
-			&gmajpb.TransferKeysReq{FromId: prevID, ToNode: node.predecessor},
-		)
+		_ = node.transferKeys(prevID, node.predecessor)
 	}
 }
 
@@ -367,10 +369,7 @@ func (node *Node) Shutdown() {
 
 	if node.Addr != node.successor.Addr {
 		if pred != nil {
-			_ = node.transferKeys(&gmajpb.TransferKeysReq{
-				FromId: pred.Id,
-				ToNode: succ,
-			})
+			_ = node.transferKeys(pred.Id, succ)
 			_ = node.setPredecessorRPC(succ, pred)
 			_ = node.setSuccessorRPC(pred, succ)
 		}
@@ -378,7 +377,7 @@ func (node *Node) Shutdown() {
 
 	node.connMtx.Lock()
 	for _, cc := range node.clientConns {
-		cc.conn.Close()
+		_ = cc.conn.Close()
 	}
 	node.connMtx.Unlock()
 	node.grpcs.Stop()

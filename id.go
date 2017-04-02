@@ -12,12 +12,14 @@ import (
 )
 
 // hashKey hashes a string to its appropriate size.
-func hashKey(key string) []byte {
+func hashKey(key string) ([]byte, error) {
 	h := sha1.New()
-	h.Write([]byte(key))
+	if _, err := h.Write([]byte(key)); err != nil {
+		return nil, err
+	}
 	v := h.Sum(nil)
 
-	return v[:config.IDLength]
+	return v[:config.IDLength], nil
 }
 
 // NewID takes a string representing

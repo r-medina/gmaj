@@ -41,7 +41,12 @@ func Put(node *Node, key string, val []byte) error {
 
 // locate helps find the appropriate node in the ring.
 func (node *Node) locate(key string) (*gmajpb.Node, error) {
-	return node.findSuccessor(hashKey(key))
+	hashed, err := hashKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return node.findSuccessor(hashed)
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys
@@ -134,8 +139,7 @@ func (node *Node) put(key string, val []byte) error {
 	return node.putKeyValRPC(remoteNode, key, val)
 }
 
-func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
-	toNode := tmsg.ToNode
+func (node *Node) transferKeys(fromID []byte, toNode *gmajpb.Node) error {
 	if idsEqual(toNode.Id, node.Id) {
 		return nil
 	}
@@ -145,11 +149,14 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 
 	toDelete := []string{}
 	for key, val := range node.datastore {
-		hashedKey := hashKey(key)
+		hashedKey, err := hashKey(key)
+		if err != nil {
+			return err
+		}
 
 		// Check that the hashed_key lies in the correct range before putting
 		// the value in our predecessor.
-		if betweenRightIncl(hashedKey, tmsg.FromId, toNode.Id) {
+		if betweenRightIncl(hashedKey, fromID, toNode.Id) {
 			if err := node.putKeyValRPC(toNode, key, val); err != nil {
 				return err
 			}
@@ -175,13 +182,13 @@ func (node *Node) DatastoreString() (str string) {
 		"Node-%v datastore:", IDToString(node.Id),
 	))
 
+	const maxLen = 64
+
 	node.dsMtx.RLock()
 	if len(node.datastore) == 0 {
 		defer node.dsMtx.RUnlock()
 		return
 	}
-
-	const maxLen = 64
 
 	for key, val := range node.datastore {
 		buf.WriteString("\n")
