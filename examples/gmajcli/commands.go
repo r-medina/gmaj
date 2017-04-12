@@ -52,7 +52,7 @@ var cmds = map[string]command{
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				fmt.Println(val)
+				fmt.Printf("%s\n", val)
 			}
 		}
 		return
@@ -60,7 +60,7 @@ var cmds = map[string]command{
 
 	"put": func(nodes []*gmaj.Node, args ...string) (stop bool) {
 		if len(args) > 1 {
-			err := gmaj.Put(nodes[0], args[0], args[1])
+			err := gmaj.Put(nodes[0], args[0], []byte(args[1]))
 			if err != nil {
 				fmt.Println(err)
 			}

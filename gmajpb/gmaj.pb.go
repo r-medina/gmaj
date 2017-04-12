@@ -10,6 +10,14 @@ It is generated from these files:
 
 It has these top-level messages:
 	Node
+	GetIDRequest
+	GetIDResponse
+	LocateRequest
+	LocateResponse
+	GetRequest
+	GetResponse
+	PutRequest
+	PutResponse
 	TransferKeysReq
 	MT
 	KeyVal
@@ -64,6 +72,126 @@ func (m *Node) GetAddr() string {
 	return ""
 }
 
+type GetIDRequest struct {
+}
+
+func (m *GetIDRequest) Reset()                    { *m = GetIDRequest{} }
+func (m *GetIDRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetIDRequest) ProtoMessage()               {}
+func (*GetIDRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+type GetIDResponse struct {
+	Id []byte `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+}
+
+func (m *GetIDResponse) Reset()                    { *m = GetIDResponse{} }
+func (m *GetIDResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetIDResponse) ProtoMessage()               {}
+func (*GetIDResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *GetIDResponse) GetId() []byte {
+	if m != nil {
+		return m.Id
+	}
+	return nil
+}
+
+type LocateRequest struct {
+	Key string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+}
+
+func (m *LocateRequest) Reset()                    { *m = LocateRequest{} }
+func (m *LocateRequest) String() string            { return proto.CompactTextString(m) }
+func (*LocateRequest) ProtoMessage()               {}
+func (*LocateRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *LocateRequest) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+type LocateResponse struct {
+	Node *Node `protobuf:"bytes,1,opt,name=node" json:"node,omitempty"`
+}
+
+func (m *LocateResponse) Reset()                    { *m = LocateResponse{} }
+func (m *LocateResponse) String() string            { return proto.CompactTextString(m) }
+func (*LocateResponse) ProtoMessage()               {}
+func (*LocateResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *LocateResponse) GetNode() *Node {
+	if m != nil {
+		return m.Node
+	}
+	return nil
+}
+
+type GetRequest struct {
+	Key string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+}
+
+func (m *GetRequest) Reset()                    { *m = GetRequest{} }
+func (m *GetRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetRequest) ProtoMessage()               {}
+func (*GetRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *GetRequest) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+type GetResponse struct {
+	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (m *GetResponse) Reset()                    { *m = GetResponse{} }
+func (m *GetResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetResponse) ProtoMessage()               {}
+func (*GetResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *GetResponse) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+type PutRequest struct {
+	Key   string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	Value []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (m *PutRequest) Reset()                    { *m = PutRequest{} }
+func (m *PutRequest) String() string            { return proto.CompactTextString(m) }
+func (*PutRequest) ProtoMessage()               {}
+func (*PutRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
+func (m *PutRequest) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *PutRequest) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+type PutResponse struct {
+}
+
+func (m *PutResponse) Reset()                    { *m = PutResponse{} }
+func (m *PutResponse) String() string            { return proto.CompactTextString(m) }
+func (*PutResponse) ProtoMessage()               {}
+func (*PutResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+
 type TransferKeysReq struct {
 	FromId []byte `protobuf:"bytes,1,opt,name=from_id,json=fromId,proto3" json:"from_id,omitempty"`
 	ToNode *Node  `protobuf:"bytes,2,opt,name=to_node,json=toNode" json:"to_node,omitempty"`
@@ -72,7 +200,7 @@ type TransferKeysReq struct {
 func (m *TransferKeysReq) Reset()                    { *m = TransferKeysReq{} }
 func (m *TransferKeysReq) String() string            { return proto.CompactTextString(m) }
 func (*TransferKeysReq) ProtoMessage()               {}
-func (*TransferKeysReq) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*TransferKeysReq) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
 
 func (m *TransferKeysReq) GetFromId() []byte {
 	if m != nil {
@@ -94,17 +222,17 @@ type MT struct {
 func (m *MT) Reset()                    { *m = MT{} }
 func (m *MT) String() string            { return proto.CompactTextString(m) }
 func (*MT) ProtoMessage()               {}
-func (*MT) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (*MT) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
 
 type KeyVal struct {
 	Key string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	Val string `protobuf:"bytes,2,opt,name=val" json:"val,omitempty"`
+	Val []byte `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"`
 }
 
 func (m *KeyVal) Reset()                    { *m = KeyVal{} }
 func (m *KeyVal) String() string            { return proto.CompactTextString(m) }
 func (*KeyVal) ProtoMessage()               {}
-func (*KeyVal) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*KeyVal) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
 
 func (m *KeyVal) GetKey() string {
 	if m != nil {
@@ -113,11 +241,11 @@ func (m *KeyVal) GetKey() string {
 	return ""
 }
 
-func (m *KeyVal) GetVal() string {
+func (m *KeyVal) GetVal() []byte {
 	if m != nil {
 		return m.Val
 	}
-	return ""
+	return nil
 }
 
 type ID struct {
@@ -127,7 +255,7 @@ type ID struct {
 func (m *ID) Reset()                    { *m = ID{} }
 func (m *ID) String() string            { return proto.CompactTextString(m) }
 func (*ID) ProtoMessage()               {}
-func (*ID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (*ID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
 
 func (m *ID) GetId() []byte {
 	if m != nil {
@@ -143,7 +271,7 @@ type Key struct {
 func (m *Key) Reset()                    { *m = Key{} }
 func (m *Key) String() string            { return proto.CompactTextString(m) }
 func (*Key) ProtoMessage()               {}
-func (*Key) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*Key) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
 
 func (m *Key) GetKey() string {
 	if m != nil {
@@ -153,23 +281,31 @@ func (m *Key) GetKey() string {
 }
 
 type Val struct {
-	Val string `protobuf:"bytes,1,opt,name=val" json:"val,omitempty"`
+	Val []byte `protobuf:"bytes,1,opt,name=val,proto3" json:"val,omitempty"`
 }
 
 func (m *Val) Reset()                    { *m = Val{} }
 func (m *Val) String() string            { return proto.CompactTextString(m) }
 func (*Val) ProtoMessage()               {}
-func (*Val) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (*Val) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{14} }
 
-func (m *Val) GetVal() string {
+func (m *Val) GetVal() []byte {
 	if m != nil {
 		return m.Val
 	}
-	return ""
+	return nil
 }
 
 func init() {
 	proto.RegisterType((*Node)(nil), "gmajpb.Node")
+	proto.RegisterType((*GetIDRequest)(nil), "gmajpb.GetIDRequest")
+	proto.RegisterType((*GetIDResponse)(nil), "gmajpb.GetIDResponse")
+	proto.RegisterType((*LocateRequest)(nil), "gmajpb.LocateRequest")
+	proto.RegisterType((*LocateResponse)(nil), "gmajpb.LocateResponse")
+	proto.RegisterType((*GetRequest)(nil), "gmajpb.GetRequest")
+	proto.RegisterType((*GetResponse)(nil), "gmajpb.GetResponse")
+	proto.RegisterType((*PutRequest)(nil), "gmajpb.PutRequest")
+	proto.RegisterType((*PutResponse)(nil), "gmajpb.PutResponse")
 	proto.RegisterType((*TransferKeysReq)(nil), "gmajpb.TransferKeysReq")
 	proto.RegisterType((*MT)(nil), "gmajpb.MT")
 	proto.RegisterType((*KeyVal)(nil), "gmajpb.KeyVal")
@@ -190,13 +326,13 @@ const _ = grpc.SupportPackageIsVersion4
 
 type GMajClient interface {
 	// GetID returns the ID of the node.
-	GetID(ctx context.Context, in *MT, opts ...grpc.CallOption) (*ID, error)
+	GetID(ctx context.Context, in *GetIDRequest, opts ...grpc.CallOption) (*GetIDResponse, error)
 	// Locate finds where a key belongs.
-	Locate(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Node, error)
+	Locate(ctx context.Context, in *LocateRequest, opts ...grpc.CallOption) (*LocateResponse, error)
 	// Get returns the value in Chord ring for the given key.
-	Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Val, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	// Put writes a key value pair to the Chord ring.
-	Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*MT, error)
+	Put(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*PutResponse, error)
 }
 
 type gMajClient struct {
@@ -207,8 +343,8 @@ func NewGMajClient(cc *grpc.ClientConn) GMajClient {
 	return &gMajClient{cc}
 }
 
-func (c *gMajClient) GetID(ctx context.Context, in *MT, opts ...grpc.CallOption) (*ID, error) {
-	out := new(ID)
+func (c *gMajClient) GetID(ctx context.Context, in *GetIDRequest, opts ...grpc.CallOption) (*GetIDResponse, error) {
+	out := new(GetIDResponse)
 	err := grpc.Invoke(ctx, "/gmajpb.GMaj/GetID", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -216,8 +352,8 @@ func (c *gMajClient) GetID(ctx context.Context, in *MT, opts ...grpc.CallOption)
 	return out, nil
 }
 
-func (c *gMajClient) Locate(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Node, error) {
-	out := new(Node)
+func (c *gMajClient) Locate(ctx context.Context, in *LocateRequest, opts ...grpc.CallOption) (*LocateResponse, error) {
+	out := new(LocateResponse)
 	err := grpc.Invoke(ctx, "/gmajpb.GMaj/Locate", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -225,8 +361,8 @@ func (c *gMajClient) Locate(ctx context.Context, in *Key, opts ...grpc.CallOptio
 	return out, nil
 }
 
-func (c *gMajClient) Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Val, error) {
-	out := new(Val)
+func (c *gMajClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	out := new(GetResponse)
 	err := grpc.Invoke(ctx, "/gmajpb.GMaj/Get", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -234,8 +370,8 @@ func (c *gMajClient) Get(ctx context.Context, in *Key, opts ...grpc.CallOption) 
 	return out, nil
 }
 
-func (c *gMajClient) Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOption) (*MT, error) {
-	out := new(MT)
+func (c *gMajClient) Put(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*PutResponse, error) {
+	out := new(PutResponse)
 	err := grpc.Invoke(ctx, "/gmajpb.GMaj/Put", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -247,13 +383,13 @@ func (c *gMajClient) Put(ctx context.Context, in *KeyVal, opts ...grpc.CallOptio
 
 type GMajServer interface {
 	// GetID returns the ID of the node.
-	GetID(context.Context, *MT) (*ID, error)
+	GetID(context.Context, *GetIDRequest) (*GetIDResponse, error)
 	// Locate finds where a key belongs.
-	Locate(context.Context, *Key) (*Node, error)
+	Locate(context.Context, *LocateRequest) (*LocateResponse, error)
 	// Get returns the value in Chord ring for the given key.
-	Get(context.Context, *Key) (*Val, error)
+	Get(context.Context, *GetRequest) (*GetResponse, error)
 	// Put writes a key value pair to the Chord ring.
-	Put(context.Context, *KeyVal) (*MT, error)
+	Put(context.Context, *PutRequest) (*PutResponse, error)
 }
 
 func RegisterGMajServer(s *grpc.Server, srv GMajServer) {
@@ -261,7 +397,7 @@ func RegisterGMajServer(s *grpc.Server, srv GMajServer) {
 }
 
 func _GMaj_GetID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MT)
+	in := new(GetIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -273,13 +409,13 @@ func _GMaj_GetID_Handler(srv interface{}, ctx context.Context, dec func(interfac
 		FullMethod: "/gmajpb.GMaj/GetID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GMajServer).GetID(ctx, req.(*MT))
+		return srv.(GMajServer).GetID(ctx, req.(*GetIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _GMaj_Locate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Key)
+	in := new(LocateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -291,13 +427,13 @@ func _GMaj_Locate_Handler(srv interface{}, ctx context.Context, dec func(interfa
 		FullMethod: "/gmajpb.GMaj/Locate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GMajServer).Locate(ctx, req.(*Key))
+		return srv.(GMajServer).Locate(ctx, req.(*LocateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _GMaj_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Key)
+	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -309,13 +445,13 @@ func _GMaj_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{
 		FullMethod: "/gmajpb.GMaj/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GMajServer).Get(ctx, req.(*Key))
+		return srv.(GMajServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _GMaj_Put_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KeyVal)
+	in := new(PutRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -327,7 +463,7 @@ func _GMaj_Put_Handler(srv interface{}, ctx context.Context, dec func(interface{
 		FullMethod: "/gmajpb.GMaj/Put",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GMajServer).Put(ctx, req.(*KeyVal))
+		return srv.(GMajServer).Put(ctx, req.(*PutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -360,24 +496,30 @@ var _GMaj_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("github.com/r-medina/gmaj/gmajpb/gmaj.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 304 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x5c, 0x91, 0xdf, 0x6a, 0xf2, 0x40,
-	0x10, 0xc5, 0xc9, 0x9f, 0x2f, 0xe2, 0x28, 0x7e, 0x65, 0x28, 0x28, 0xde, 0x68, 0xb7, 0x14, 0x44,
-	0xda, 0x08, 0xf6, 0x15, 0x04, 0x09, 0xa9, 0xa5, 0x0d, 0xe2, 0xad, 0xac, 0xee, 0x68, 0x63, 0x8d,
-	0x6b, 0xd7, 0xb5, 0x90, 0xb7, 0xe8, 0x23, 0x97, 0x5d, 0x35, 0x98, 0xde, 0x64, 0xce, 0x4c, 0x66,
-	0x7f, 0xe7, 0x2c, 0x0b, 0xfd, 0x75, 0xaa, 0x3f, 0x8e, 0x8b, 0x70, 0x29, 0xb3, 0x81, 0x7a, 0xca,
-	0x48, 0xa4, 0x3b, 0x3e, 0x58, 0x67, 0x7c, 0x63, 0x3f, 0xfb, 0x85, 0x2d, 0xe1, 0x5e, 0x49, 0x2d,
-	0x31, 0x38, 0x8d, 0x58, 0x1f, 0xfc, 0x57, 0x29, 0x08, 0x1b, 0xe0, 0xa6, 0xa2, 0xe5, 0x74, 0x9d,
-	0x5e, 0x3d, 0x71, 0x53, 0x81, 0x08, 0x3e, 0x17, 0x42, 0xb5, 0xdc, 0xae, 0xd3, 0xab, 0x26, 0x56,
-	0xb3, 0x77, 0xf8, 0x3f, 0x55, 0x7c, 0x77, 0x58, 0x91, 0x8a, 0x29, 0x3f, 0x24, 0xf4, 0x85, 0x4d,
-	0xa8, 0xac, 0x94, 0xcc, 0xe6, 0xc5, 0xd9, 0xc0, 0xb4, 0x91, 0xc0, 0x07, 0xa8, 0x68, 0x39, 0xdf,
-	0x49, 0x41, 0x16, 0x51, 0x1b, 0xd6, 0xc3, 0x93, 0x63, 0x68, 0xec, 0x92, 0x40, 0x4b, 0x53, 0x99,
-	0x0f, 0xee, 0x64, 0xca, 0x1e, 0x21, 0x88, 0x29, 0x9f, 0xf1, 0x2d, 0xde, 0x80, 0xf7, 0x49, 0xb9,
-	0x65, 0x55, 0x13, 0x23, 0xcd, 0xe4, 0x9b, 0x6f, 0xcf, 0x39, 0x8c, 0x64, 0xb7, 0xe0, 0x46, 0xa3,
-	0xbf, 0x81, 0x59, 0x13, 0xbc, 0xf8, 0xb4, 0x5e, 0x06, 0x98, 0x1f, 0x67, 0xb2, 0xe1, 0x38, 0x05,
-	0x67, 0xf8, 0xe3, 0x80, 0x3f, 0x9e, 0xf0, 0x0d, 0x76, 0xe0, 0xdf, 0x98, 0x74, 0x34, 0x42, 0xb8,
-	0x64, 0x9c, 0x4c, 0xdb, 0x85, 0x8e, 0x46, 0x78, 0x0f, 0xc1, 0x8b, 0x5c, 0x72, 0x4d, 0x58, 0xbb,
-	0x4c, 0x63, 0xca, 0xdb, 0xa5, 0x2b, 0x61, 0x07, 0xbc, 0x31, 0xe9, 0xf2, 0x46, 0xd1, 0x98, 0x04,
-	0x77, 0xe0, 0xbd, 0x1d, 0x35, 0x36, 0xae, 0x16, 0x66, 0x7c, 0xdb, 0xbe, 0x32, 0x5d, 0x04, 0xf6,
-	0x71, 0x9e, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x7d, 0x08, 0x2c, 0xb0, 0xca, 0x01, 0x00, 0x00,
+	// 398 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x52, 0x6d, 0xcb, 0xda, 0x30,
+	0x14, 0xa5, 0x2f, 0x56, 0xbc, 0xbe, 0x4c, 0x32, 0x37, 0xc5, 0x0f, 0x9b, 0xcb, 0x18, 0x88, 0x6c,
+	0x15, 0x9c, 0xb0, 0x3f, 0x20, 0x14, 0x71, 0x0e, 0x57, 0x64, 0x5f, 0x25, 0x9a, 0xe8, 0xea, 0x63,
+	0x1b, 0x6d, 0x53, 0xc1, 0x1f, 0xfa, 0xfc, 0x9f, 0x87, 0xa6, 0xd1, 0xd6, 0xb7, 0x2f, 0xcd, 0xbd,
+	0x37, 0xe7, 0x1c, 0x4e, 0xee, 0x29, 0xf4, 0x36, 0x9e, 0xf8, 0x1f, 0x2f, 0xed, 0x15, 0xf7, 0xfb,
+	0xe1, 0x0f, 0x9f, 0x51, 0x2f, 0x20, 0xfd, 0x8d, 0x4f, 0xb6, 0xf2, 0xb3, 0x5f, 0xca, 0xc3, 0xde,
+	0x87, 0x5c, 0x70, 0x64, 0xa5, 0x23, 0xdc, 0x03, 0xf3, 0x0f, 0xa7, 0x0c, 0xd5, 0x40, 0xf7, 0x68,
+	0x4b, 0xeb, 0x68, 0xdd, 0x8a, 0xab, 0x7b, 0x14, 0x21, 0x30, 0x09, 0xa5, 0x61, 0x4b, 0xef, 0x68,
+	0xdd, 0x92, 0x2b, 0x6b, 0x5c, 0x83, 0x8a, 0xc3, 0xc4, 0x78, 0xe4, 0xb2, 0x43, 0xcc, 0x22, 0x81,
+	0x3f, 0x43, 0x55, 0xf5, 0xd1, 0x9e, 0x07, 0xd1, 0x9d, 0x08, 0xfe, 0x02, 0xd5, 0xdf, 0x7c, 0x45,
+	0x04, 0x53, 0x0c, 0x54, 0x07, 0xe3, 0x85, 0x9d, 0x24, 0xa2, 0xe4, 0x26, 0x25, 0x1e, 0x40, 0xed,
+	0x0c, 0x51, 0x22, 0x1d, 0x30, 0x03, 0x4e, 0x99, 0x04, 0x95, 0x07, 0x15, 0x3b, 0x35, 0x6a, 0x27,
+	0x2e, 0x5d, 0x79, 0x83, 0x3f, 0x01, 0x38, 0x4c, 0x3c, 0xd7, 0xfc, 0x0a, 0x65, 0x79, 0xaf, 0x04,
+	0x1b, 0x50, 0x38, 0x92, 0x5d, 0xcc, 0x94, 0xb1, 0xb4, 0xc1, 0x43, 0x80, 0x59, 0xfc, 0x5c, 0x24,
+	0x63, 0xe9, 0x79, 0x56, 0x15, 0xca, 0x92, 0x95, 0x4a, 0xe3, 0xbf, 0xf0, 0x6e, 0x1e, 0x92, 0x20,
+	0x5a, 0xb3, 0x70, 0xc2, 0x4e, 0x91, 0xcb, 0x0e, 0xa8, 0x09, 0xc5, 0x75, 0xc8, 0xfd, 0xc5, 0x65,
+	0x11, 0x56, 0xd2, 0x8e, 0x29, 0xfa, 0x06, 0x45, 0xc1, 0x17, 0xf2, 0x69, 0xfa, 0x83, 0xa7, 0x59,
+	0x82, 0x27, 0x27, 0x36, 0x41, 0x9f, 0xce, 0xf1, 0x77, 0xb0, 0x26, 0xec, 0xf4, 0x8f, 0xec, 0x1e,
+	0x38, 0xab, 0x83, 0x71, 0x24, 0x3b, 0xe5, 0x2b, 0x29, 0x71, 0x03, 0xf4, 0xf1, 0xe8, 0x6e, 0xfb,
+	0x4d, 0x30, 0x26, 0x29, 0xfc, 0x66, 0x3f, 0x4d, 0x30, 0x94, 0x72, 0xa2, 0xa3, 0x5d, 0x74, 0x06,
+	0xaf, 0x1a, 0x98, 0xce, 0x94, 0x6c, 0xd1, 0x10, 0x0a, 0x32, 0x59, 0xd4, 0x38, 0x7b, 0xcc, 0x07,
+	0xdf, 0xfe, 0x70, 0x33, 0x55, 0x8b, 0xfe, 0x05, 0x56, 0x9a, 0x25, 0xba, 0x00, 0xae, 0xe2, 0x6f,
+	0x7f, 0xbc, 0x1d, 0x2b, 0xa2, 0x0d, 0x86, 0xc3, 0x04, 0x42, 0x39, 0xd9, 0x33, 0xe5, 0xfd, 0xd5,
+	0x2c, 0xc3, 0xcf, 0xe2, 0x1c, 0x3e, 0x0b, 0x32, 0xc3, 0xe7, 0x62, 0x5a, 0x5a, 0xf2, 0x9f, 0xff,
+	0xf9, 0x16, 0x00, 0x00, 0xff, 0xff, 0x38, 0xf7, 0x6b, 0x18, 0x21, 0x03, 0x00, 0x00,
 }

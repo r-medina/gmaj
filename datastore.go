@@ -21,9 +21,9 @@ var errNoDatastore = errors.New("gmaj: node does not have a datastore")
 //
 
 // Get a value in the datastore, provided an abitrary node in the ring
-func Get(node *Node, key string) (string, error) {
+func Get(node *Node, key string) ([]byte, error) {
 	if node == nil {
-		return "", errors.New("Node cannot be nil")
+		return nil, errors.New("Node cannot be nil")
 	}
 
 	return node.get(key)
@@ -31,7 +31,7 @@ func Get(node *Node, key string) (string, error) {
 
 // Put a key/value in the datastore, provided an abitrary node in the ring.
 // This is useful for testing.
-func Put(node *Node, key string, val string) error {
+func Put(node *Node, key string, val []byte) error {
 	if node == nil {
 		return errors.New("Node cannot be nil")
 	}
@@ -41,7 +41,12 @@ func Put(node *Node, key string, val string) error {
 
 // locate helps find the appropriate node in the ring.
 func (node *Node) locate(key string) (*gmajpb.Node, error) {
-	return node.findSuccessor(hashKey(key))
+	hashed, err := hashKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	return node.findSuccessor(hashed)
 }
 
 // obtainNewKeys is called when a node joins a ring and wants to request keys
@@ -68,12 +73,12 @@ func (node *Node) obtainNewKeys() error {
 // RPCs to assist with interfacing with the datastore ring
 //
 
-func (node *Node) getKey(key string) (string, error) {
+func (node *Node) getKey(key string) ([]byte, error) {
 	node.dsMtx.RLock()
 	val, ok := node.datastore[key]
 	node.dsMtx.RUnlock()
 	if !ok {
-		return "", errors.New("key does not exist")
+		return nil, errors.New("key does not exist")
 	}
 
 	return val, nil
@@ -97,10 +102,10 @@ func (node *Node) putKeyVal(keyVal *gmajpb.KeyVal) error {
 	return nil
 }
 
-func (node *Node) get(key string) (string, error) {
+func (node *Node) get(key string) ([]byte, error) {
 	remoteNode, err := node.locate(key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// TODO(asubiotto): Smart retries on not found error. Implement channel
@@ -113,19 +118,19 @@ func (node *Node) get(key string) (string, error) {
 		<-time.After(config.RetryInterval)
 		remoteNode, err = node.locate(key)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		val, err = node.getKeyRPC(remoteNode, key)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 
 	return val, nil
 }
 
-func (node *Node) put(key, val string) error {
+func (node *Node) put(key string, val []byte) error {
 	remoteNode, err := node.locate(key)
 	if err != nil {
 		return err
@@ -134,8 +139,7 @@ func (node *Node) put(key, val string) error {
 	return node.putKeyValRPC(remoteNode, key, val)
 }
 
-func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
-	toNode := tmsg.ToNode
+func (node *Node) transferKeys(fromID []byte, toNode *gmajpb.Node) error {
 	if idsEqual(toNode.Id, node.Id) {
 		return nil
 	}
@@ -145,11 +149,14 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 
 	toDelete := []string{}
 	for key, val := range node.datastore {
-		hashedKey := hashKey(key)
+		hashedKey, err := hashKey(key)
+		if err != nil {
+			return err
+		}
 
 		// Check that the hashed_key lies in the correct range before putting
 		// the value in our predecessor.
-		if betweenRightIncl(hashedKey, tmsg.FromId, toNode.Id) {
+		if betweenRightIncl(hashedKey, fromID, toNode.Id) {
 			if err := node.putKeyValRPC(toNode, key, val); err != nil {
 				return err
 			}
@@ -166,16 +173,34 @@ func (node *Node) transferKeys(tmsg *gmajpb.TransferKeysReq) error {
 }
 
 // DatastoreString write the contents of a node's data store to stdout.
-func (node *Node) DatastoreString() string {
+func (node *Node) DatastoreString() (str string) {
 	buf := bytes.Buffer{}
 
-	node.dsMtx.RLock()
-	defer node.dsMtx.RUnlock()
+	defer func() { str = buf.String() }()
 
 	buf.WriteString(fmt.Sprintf(
-		"Node-%v datastore: %v",
-		IDToString(node.Id), node.datastore,
+		"Node-%v datastore:", IDToString(node.Id),
 	))
 
-	return buf.String()
+	const maxLen = 64
+
+	node.dsMtx.RLock()
+	if len(node.datastore) == 0 {
+		defer node.dsMtx.RUnlock()
+		return
+	}
+
+	for key, val := range node.datastore {
+		buf.WriteString("\n")
+		buf.WriteString(key)
+		buf.WriteString(": ")
+		if len(val) >= maxLen {
+			buf.WriteString(fmt.Sprintf("%s... (truncated)", val[:maxLen]))
+		} else {
+			buf.WriteString(fmt.Sprintf("%s", val))
+		}
+	}
+	node.dsMtx.RUnlock()
+
+	return
 }

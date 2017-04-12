@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/r-medina/gmaj"
@@ -32,23 +33,24 @@ var (
 func init() {
 	app.Flag("addr", "address of node to contact").StringVar(&config.parentAddr)
 
-	put := app.Command("put", "Put a key").PreAction(getClient).Action(putKeyVal)
-	put.Arg("key", "The key to put").StringVar(&config.put.key)
-	put.Arg("value", "The key to put").StringVar(&config.put.val)
+	put := app.Command("put", "put a key - if value argument is missing, reads from stdin").
+		PreAction(getClient).Action(putKeyVal)
+	put.Arg("key", "the key to put").StringVar(&config.put.key)
+	put.Arg("value", "the key to put").StringVar(&config.put.val)
 
-	get := app.Command("get", "Get a key").PreAction(getClient).Action(getKey)
-	get.Arg("key", "The key to get").StringVar(&config.get.key)
+	get := app.Command("get", "get a key").PreAction(getClient).Action(getKey)
+	get.Arg("key", "the key to get").StringVar(&config.get.key)
 }
 
 func main() {
 	if _, err := app.Parse(os.Args[1:]); err != nil {
-		app.Fatalf("command line parsing failed: %v", err)
+		app.FatalUsage("command line parsing failed: %v", err)
 	}
 }
 
 func getClient(*kingpin.ParseContext) error {
 	conn, err := gmaj.Dial(config.parentAddr)
-	app.FatalIfError(err, "dialing parent %v failed: %v\n", config.parentAddr, err)
+	app.FatalIfError(err, "dialing parent %v failed", config.parentAddr)
 
 	config.client = gmajpb.NewGMajClient(conn)
 
@@ -57,10 +59,21 @@ func getClient(*kingpin.ParseContext) error {
 
 func putKeyVal(*kingpin.ParseContext) error {
 	key := config.put.key
-	val := config.put.val
+	strVal := config.put.val
+	var val []byte
 
-	_, err := config.client.Put(context.Background(), &gmajpb.KeyVal{Key: key, Val: val})
-	app.FatalIfError(err, "putting key %q value %q failed: %v\n", key, val, err)
+	if strVal == "" {
+		var err error
+		val, err = ioutil.ReadAll(os.Stdin)
+		app.FatalIfError(err, "failed to read from stdin")
+	} else {
+		val = []byte(strVal)
+	}
+
+	_, err := config.client.Put(context.Background(), &gmajpb.PutRequest{
+		Key: key, Value: val,
+	})
+	app.FatalIfError(err, "putting key %q failed", key)
 
 	fmt.Println("put succeded")
 
@@ -69,10 +82,10 @@ func putKeyVal(*kingpin.ParseContext) error {
 
 func getKey(*kingpin.ParseContext) error {
 	key := config.get.key
-	val, err := config.client.Get(context.Background(), &gmajpb.Key{Key: key})
-	app.FatalIfError(err, "getting key %q failed: %v\n", key, err)
+	resp, err := config.client.Get(context.Background(), &gmajpb.GetRequest{Key: key})
+	app.FatalIfError(err, "getting key %q failed", key)
 
-	fmt.Printf("%s: %s\n", key, val.Val)
+	fmt.Printf("%s", resp.Value)
 
 	return nil
 }
