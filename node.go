@@ -357,6 +357,8 @@ func (node *Node) closestPrecedingFinger(id []byte) *gmajpb.Node {
 func (node *Node) Shutdown() {
 	close(node.shutdownCh)
 
+	node.grpcs.Stop()
+
 	// Notify successor to change its predecessor pointer to our predecessor.
 	// Do nothing if we are our own successor (i.e. we are the only node in the
 	// ring).
@@ -367,12 +369,10 @@ func (node *Node) Shutdown() {
 	node.predMtx.RUnlock()
 	node.succMtx.RUnlock()
 
-	if node.Addr != node.successor.Addr {
-		if pred != nil {
-			_ = node.transferKeys(pred.Id, succ)
-			_ = node.setPredecessorRPC(succ, pred)
-			_ = node.setSuccessorRPC(pred, succ)
-		}
+	if node.Addr != succ.Addr && pred != nil {
+		_ = node.transferKeys(pred.Id, succ)
+		_ = node.setPredecessorRPC(succ, pred)
+		_ = node.setSuccessorRPC(pred, succ)
 	}
 
 	node.connMtx.Lock()
@@ -380,9 +380,6 @@ func (node *Node) Shutdown() {
 		_ = cc.conn.Close()
 	}
 	node.connMtx.Unlock()
-	node.grpcs.Stop()
-	node.dsMtx.Lock()
-	node.dsMtx.Unlock()
 }
 
 // String takes a Node and generates a short semi-descriptive string.
