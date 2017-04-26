@@ -51,7 +51,7 @@ type ChordClient interface {
 	// SetPredecessor sets Node as the predeccessor. This function does not do
 	// any validation.
 	SetPredecessor(ctx context.Context, in *gmajpb.Node, opts ...grpc.CallOption) (*gmajpb.MT, error)
-	// SetPredecessor sets Node as the successor. This function does not do any
+	// SetSuccessor sets Node as the successor. This function does not do any
 	// validation.
 	SetSuccessor(ctx context.Context, in *gmajpb.Node, opts ...grpc.CallOption) (*gmajpb.MT, error)
 	// Notify notifies Chord that Node thinks it is our predecessor. This has
