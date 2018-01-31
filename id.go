@@ -67,9 +67,8 @@ func addIDs(a, b []byte) []byte {
 	bInt := big.Int{}
 	bInt.SetBytes(b)
 
-	sum := big.Int{}
-	sum.Add(&aInt, &bInt)
-	return sum.Bytes()
+	aInt.Add(&aInt, &bInt)
+	return aInt.Bytes()
 }
 
 // between returns if x is between a and b.

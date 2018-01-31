@@ -154,8 +154,8 @@ func NewNode(parent *gmajpb.Node, opts ...NodeOption) (*Node, error) {
 
 	// thread 2: kick off timer to stabilize periodically
 	go func() {
+		ticker := time.NewTicker(config.StabilizeInterval)
 		for {
-			ticker := time.NewTicker(config.StabilizeInterval)
 			select {
 			case <-ticker.C:
 				node.stabilize()
@@ -169,8 +169,8 @@ func NewNode(parent *gmajpb.Node, opts ...NodeOption) (*Node, error) {
 	// thread 3: kick off timer to fix finger table periodically
 	go func() {
 		next := 0
+		ticker := time.NewTicker(config.FixNextFingerInterval)
 		for {
-			ticker := time.NewTicker(config.FixNextFingerInterval)
 			select {
 			case <-ticker.C:
 				next = node.fixNextFinger(next)
